@@ -1,0 +1,201 @@
+/* 设置页面样式 */
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  max-width: 800px;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Section */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.sectionIcon {
+  color: var(--color-accent);
+}
+
+.sectionHeader h3 {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sectionContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* 设置项 */
+.settingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.settingItem:last-child {
+  border-bottom: none;
+}
+
+.settingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settingLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.settingDesc {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+/* Select */
+.select {
+  min-width: 120px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.select:hover {
+  border-color: var(--border-focus);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+/* 颜色模式 */
+.colorModeOptions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.colorModeBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.colorModeBtn:hover {
+  border-color: var(--border-focus);
+}
+
+.colorModeBtn.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+  color: var(--text-primary);
+}
+
+.riseRed {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.fallGreen {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.riseGreen {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.fallRed {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* 参数值 */
+.paramValue {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+/* 关于 */
+.aboutInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.aboutInfo p {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.aboutDesc {
+  color: var(--text-secondary) !important;
+}
+
+.aboutNote {
+  margin-top: var(--spacing-sm);
+}
+
+.noteList {
+  margin-top: var(--spacing-xs);
+  padding-left: var(--spacing-lg);
+  list-style: disc;
+}
+
+.noteList li {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .settingItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .colorModeOptions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .colorModeBtn {
+    justify-content: center;
+  }
+}

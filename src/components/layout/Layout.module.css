@@ -1,0 +1,30 @@
+/* 主布局样式 */
+
+.layout {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.main {
+  position: relative;
+  margin-left: var(--sidebar-width);
+  padding-top: var(--header-height);
+  min-height: 100vh;
+}
+
+.content {
+  padding: var(--spacing-xl);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .main {
+    margin-left: 0;
+  }
+
+  .content {
+    padding: var(--spacing-md);
+  }
+}

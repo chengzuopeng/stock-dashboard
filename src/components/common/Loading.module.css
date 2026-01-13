@@ -1,0 +1,82 @@
+/* 加载状态样式 */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--text-tertiary);
+}
+
+.sm {
+  padding: var(--spacing-md);
+}
+
+.md {
+  padding: var(--spacing-xl);
+}
+
+.lg {
+  padding: var(--spacing-2xl);
+}
+
+.icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.text {
+  font-size: var(--font-size-sm);
+}
+
+/* 全屏 loading - 仅覆盖内容区域，不覆盖导航 */
+.fullScreen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  z-index: 100;
+}
+
+.rounded {
+  border-radius: 50%;
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.emptyIcon {
+  margin-bottom: var(--spacing-md);
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.emptyTitle {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.emptyDesc {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  margin-bottom: var(--spacing-md);
+}
+
+.emptyAction {
+  margin-top: var(--spacing-sm);
+}

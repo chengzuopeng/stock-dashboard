@@ -1,0 +1,302 @@
+/* ============================================
+   A股看板 - 全局样式
+   扁平化设计 / 暗色主题
+   ============================================ */
+
+:root {
+  /* 基础色板 - 深色主题 */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-elevated: #1c2128;
+  
+  /* 边框 */
+  --border-primary: #30363d;
+  --border-secondary: #21262d;
+  --border-focus: #388bfd;
+  
+  /* 文字 */
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-tertiary: #6e7681;
+  --text-muted: #484f58;
+  
+  /* 涨跌色 - 红涨绿跌 */
+  --color-rise: #ef4444;
+  --color-rise-bg: rgba(239, 68, 68, 0.12);
+  --color-fall: #22c55e;
+  --color-fall-bg: rgba(34, 197, 94, 0.12);
+  --color-flat: #8b949e;
+  
+  /* 强调色 */
+  --color-accent: #58a6ff;
+  --color-accent-hover: #79b8ff;
+  --color-accent-bg: rgba(88, 166, 255, 0.12);
+  
+  /* 功能色 */
+  --color-warning: #d29922;
+  --color-warning-bg: rgba(210, 153, 34, 0.12);
+  --color-error: #f85149;
+  --color-success: #3fb950;
+  
+  /* 图表色板 */
+  --chart-ma5: #f59e0b;
+  --chart-ma10: #3b82f6;
+  --chart-ma20: #ec4899;
+  --chart-ma60: #8b5cf6;
+  --chart-volume: #6366f1;
+  --chart-amount: #14b8a6;
+  
+  /* 布局 */
+  --sidebar-width: 220px;
+  --header-height: 56px;
+  --content-max-width: 1800px;
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  
+  /* 过渡 */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  
+  /* 字体 */
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+}
+
+/* 浅色主题 */
+[data-theme="light"] {
+  /* 基础色板 - 浅色主题 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --bg-elevated: #ffffff;
+  
+  /* 边框 */
+  --border-primary: #d0d7de;
+  --border-secondary: #e4e8ec;
+  --border-focus: #0969da;
+  
+  /* 文字 */
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-tertiary: #8b949e;
+  --text-muted: #afb8c1;
+  
+  /* 强调色 */
+  --color-accent: #0969da;
+  --color-accent-hover: #0550ae;
+  --color-accent-bg: rgba(9, 105, 218, 0.1);
+  
+  /* 功能色 */
+  --color-warning: #bf8700;
+  --color-warning-bg: rgba(191, 135, 0, 0.1);
+  --color-error: #cf222e;
+  --color-success: #1a7f37;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.08);
+  --shadow-md: 0 4px 12px rgba(31, 35, 40, 0.12);
+  --shadow-lg: 0 8px 24px rgba(31, 35, 40, 0.16);
+}
+
+/* 绿涨红跌模式 */
+[data-color-mode="green-rise"] {
+  --color-rise: #22c55e;
+  --color-rise-bg: rgba(34, 197, 94, 0.12);
+  --color-fall: #ef4444;
+  --color-fall-bg: rgba(239, 68, 68, 0.12);
+}
+
+/* 重置样式 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* 选中文本 */
+::selection {
+  background: var(--color-accent);
+  color: var(--bg-primary);
+}
+
+/* 工具类 */
+.text-rise {
+  color: var(--color-rise);
+}
+
+.text-fall {
+  color: var(--color-fall);
+}
+
+.text-flat {
+  color: var(--color-flat);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* 数字等宽 */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 动画关键帧 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from { 
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 骨架屏 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--bg-elevated) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --header-height: 48px;
+  }
+}

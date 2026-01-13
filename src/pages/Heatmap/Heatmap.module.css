@@ -1,0 +1,125 @@
+/* 热力图页面样式 */
+
+.heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  height: calc(100vh - var(--header-height) - 48px);
+  padding-bottom: var(--spacing-lg);
+}
+
+/* 控制栏 */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+}
+
+.controlGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.controlLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  min-width: 32px;
+}
+
+.colorModeBtn {
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.colorModeBtn:hover {
+  color: var(--text-primary);
+}
+
+.colorModeBtn.active {
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* 图表卡片 */
+.chartCard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chartWrapper {
+  flex: 1;
+  min-height: 450px;
+  width: 100%;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--spacing-md);
+  color: var(--text-tertiary);
+}
+
+/* 图例 */
+.legend {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm);
+}
+
+.legendBar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.legendLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.legendGradient {
+  width: 200px;
+  height: 8px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    to right,
+    var(--color-fall),
+    var(--color-flat),
+    var(--color-rise)
+  );
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .controls {
+    gap: var(--spacing-md);
+  }
+
+  .controlGroup {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .heatmap {
+    height: auto;
+  }
+
+  .chartWrapper {
+    min-height: 400px;
+  }
+}

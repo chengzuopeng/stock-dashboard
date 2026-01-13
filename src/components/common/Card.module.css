@@ -1,0 +1,59 @@
+/* 卡片样式 */
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+}
+
+.padding-none {
+  padding: 0;
+}
+
+.padding-sm {
+  padding: var(--spacing-sm);
+}
+
+.padding-md {
+  padding: var(--spacing-lg);
+}
+
+.padding-lg {
+  padding: var(--spacing-xl);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.extra {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.body {
+  /* body 样式由内容决定 */
+  flex: 1;
+  min-height: 0;
+}
+
+/* 允许卡片填充父容器 */
+.card.padding-none {
+  display: flex;
+  flex-direction: column;
+}
+
+.card.padding-none .body {
+  flex: 1;
+  min-height: 0;
+}

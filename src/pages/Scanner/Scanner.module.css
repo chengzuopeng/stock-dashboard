@@ -1,0 +1,197 @@
+/* 扫描页面样式 */
+
+.scanner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+/* 配置区 */
+.configSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* 信号网格 */
+.signalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.signalCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.signalCard:hover {
+  border-color: var(--border-focus);
+}
+
+.signalCard.active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+.signalLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.signalDesc {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+/* 结果区 */
+.resultSection {
+  min-width: 0;
+}
+
+.resultCount {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.resultList {
+  display: flex;
+  flex-direction: column;
+}
+
+.resultItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--border-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.resultItem:last-child {
+  border-bottom: none;
+}
+
+.resultItem:hover {
+  background: var(--bg-tertiary);
+  margin: 0 calc(-1 * var(--spacing-lg));
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.resultInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resultName {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+.resultCode {
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+.resultSignal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.signalTag {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  padding: 2px 8px;
+  background: var(--color-accent-bg);
+  border-radius: var(--radius-sm);
+}
+
+.resultTime {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.resultItem:hover .addBtn {
+  opacity: 1;
+}
+
+.addBtn:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+.addBtn.added {
+  opacity: 1;
+  color: var(--color-fall);
+  cursor: default;
+}
+
+.addBtn.added:hover {
+  background: transparent;
+}
+
+/* 响应式 */
+@media (max-width: 1024px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .signalGrid {
+    grid-template-columns: 1fr;
+  }
+}
