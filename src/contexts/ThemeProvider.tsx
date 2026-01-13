@@ -2,7 +2,7 @@
  * 主题上下文 Provider - 管理浅色/深色主题切换
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ThemeContext } from './themeContext';
 import type { Theme } from './themeTypes';
 

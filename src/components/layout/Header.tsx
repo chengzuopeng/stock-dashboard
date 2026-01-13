@@ -27,7 +27,7 @@ import {
   isInWatchlist,
 } from '@/services/storage';
 import { useToast } from '@/components/common';
-import { useTheme } from '@/contexts';
+import { useTheme } from '@/hooks';
 import type { SearchHistoryItem } from '@/types';
 import styles from './Header.module.css';
 
