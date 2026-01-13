@@ -25,15 +25,6 @@ function getInitialTheme(): Theme {
   if (stored === 'light' || stored === 'dark') {
     return stored;
   }
-  
-  // 其次根据系统偏好
-  if (typeof window !== 'undefined' && window.matchMedia) {
-    if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-      return 'light';
-    }
-  }
-  
-  // 默认深色
   return 'dark';
 }
 
