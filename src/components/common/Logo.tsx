@@ -9,9 +9,10 @@ interface LogoProps {
 }
 
 export function Logo({ size = 32, className }: LogoProps) {
+  const logoUrl = new URL('logo.svg', import.meta.env.BASE_URL).toString();
   return (
     <img
-      src="/logo.svg"
+      src={logoUrl}
       alt="Logo"
       width={size}
       height={size}
