@@ -2,6 +2,8 @@
 
 一个基于 React + TypeScript 的 A 股数据看板项目，聚焦行情展示、筛选与自选管理，支持分时趋势、板块/行业视图和个股详情分析，适合用作日常盘中观察与快速筛选工具。
 
+体验链接：https://chengzuopeng.github.io/stock-dashboard/
+
 ## 数据来源：stock-sdk
 项目的所有行情与数据接口由 [stock-sdk](https://www.npmjs.com/package/stock-sdk) 提供。
 - 接入层：`src/services/sdk.ts`，封装缓存、重试与统一调用
