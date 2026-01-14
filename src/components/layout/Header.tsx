@@ -17,6 +17,8 @@ import {
   Check,
   Sun,
   Moon,
+  Github,
+  Database,
 } from 'lucide-react';
 import { search as searchApi } from '@/services/sdk';
 import {
@@ -324,6 +326,24 @@ export function Header() {
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+        <a
+          href="https://stock-sdk.linkdiary.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.sdkLink}
+          title="Stock SDK"
+        >
+          <Database size={18} />
+        </a>
+        <a
+          href="https://github.com/chengzuopeng/stock-dashboard"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.githubLink}
+          title="GitHub"
+        >
+          <Github size={18} />
+        </a>
       </div>
     </header>
   );

@@ -18,6 +18,35 @@
   margin: 0 auto;
 }
 
+/* 底部声明 */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-secondary);
+  margin-top: var(--spacing-xl);
+}
+
+.footer a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer a:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.divider {
+  color: var(--border-primary);
+  margin: 0 var(--spacing-xs);
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .main {
@@ -25,6 +54,11 @@
   }
 
   .content {
+    padding: var(--spacing-md);
+  }
+
+  .footer {
+    flex-wrap: wrap;
     padding: var(--spacing-md);
   }
 }

@@ -202,6 +202,42 @@
   background: var(--border-primary);
 }
 
+/* GitHub 链接 */
+.githubLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.githubLink:hover {
+  color: var(--text-primary);
+  background: var(--border-primary);
+}
+
+/* Stock SDK 链接 */
+.sdkLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.sdkLink:hover {
+  color: var(--color-accent);
+  background: var(--border-primary);
+}
+
 /* 快速加自选按钮 */
 .quickAddBtn {
   display: flex;

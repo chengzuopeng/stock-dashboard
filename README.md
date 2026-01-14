@@ -5,7 +5,7 @@
 体验链接：https://chengzuopeng.github.io/stock-dashboard/
 
 ## 数据来源：stock-sdk
-项目的所有行情与数据接口由 [stock-sdk](https://www.npmjs.com/package/stock-sdk) 提供。
+项目的所有行情与数据接口由 [stock-sdk](https://stock-sdk.linkdiary.cn/) 提供。
 - 接入层：`src/services/sdk.ts`，封装缓存、重试与统一调用
 - 参考文档：`sdk.md`
 - 使用范围：实时行情、分时、板块/行业、选股与详情页数据
