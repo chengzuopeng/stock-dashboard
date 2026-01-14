@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
@@ -28,7 +29,8 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn build
         env:
-          BASE_URL: /${{ github.event.repository.name }}/
+          VITE_BASE_URL: /${{ github.event.repository.name }}/
+          GRAFANA_FARO_API_KEY: ${{ secrets.GRAFANA_SOURCEMAP_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

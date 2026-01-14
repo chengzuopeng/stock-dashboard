@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@grafana/faro-react": "^2.1.0",
     "@grafana/faro-web-sdk": "^2.1.0",
     "@grafana/faro-web-tracing": "^2.1.0",
     "echarts": "^6.0.0",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@grafana/faro-rollup-plugin": "^0.7.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

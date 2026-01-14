@@ -1,6 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { getWebInstrumentations, initializeFaro } from '@grafana/faro-web-sdk';
+import { matchRoutes } from 'react-router-dom';
+import {
+  initializeFaro,
+  createReactRouterV6DataOptions,
+  ReactIntegration,
+  getWebInstrumentations,
+} from '@grafana/faro-react';
 import { TracingInstrumentation } from '@grafana/faro-web-tracing';
 import './index.css';
 import { App } from './App';
@@ -12,10 +18,15 @@ initializeFaro({
     version: '1.0.0',
     environment: 'production'
   },
-  
+
   instrumentations: [
     ...getWebInstrumentations(),
     new TracingInstrumentation(),
+    new ReactIntegration({
+      router: createReactRouterV6DataOptions({
+        matchRoutes,
+      }),
+    }),
   ],
 });
 
