@@ -18,6 +18,16 @@ import {
   RotateCcw,
   Zap,
   Plus,
+  Save,
+  FolderOpen,
+  Trash2,
+  Clock,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  CheckSquare,
+  Square,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/components/common';
 import { getAllAShareQuotes, getTodayTimeline } from '@/services/sdk';
@@ -38,6 +48,21 @@ interface FilterConditions {
   excludeST: boolean;
   timelineAboveAvgRatio: number;
 }
+
+interface SavedScheme {
+  id: string;
+  name: string;
+  filters: FilterConditions;
+  createdAt: number;
+}
+
+interface RecentUsage {
+  filters: FilterConditions;
+  usedAt: number;
+}
+
+type SortField = 'changePercent' | 'timelineAboveAvgRatio' | 'turnoverRate' | 'circulatingMarketCap' | 'volumeRatio';
+type SortOrder = 'asc' | 'desc';
 
 interface TimelinePoint {
   time: string;
@@ -76,6 +101,9 @@ interface LoadingProgress {
 // ========== 常量 ==========
 
 const STORAGE_KEY = 'end-of-day-picker-settings';
+const SCHEMES_STORAGE_KEY = 'end-of-day-picker-schemes';
+const RECENT_USAGE_STORAGE_KEY = 'end-of-day-picker-recent';
+const MAX_RECENT_USAGE = 5;
 
 const DEFAULT_FILTERS: FilterConditions = {
   marketCapMin: 50,
@@ -88,6 +116,14 @@ const DEFAULT_FILTERS: FilterConditions = {
   excludeST: true,
   timelineAboveAvgRatio: 80,
 };
+
+const SORT_OPTIONS: { field: SortField; label: string }[] = [
+  { field: 'changePercent', label: '涨幅' },
+  { field: 'timelineAboveAvgRatio', label: '分时强度' },
+  { field: 'turnoverRate', label: '换手率' },
+  { field: 'circulatingMarketCap', label: '流通市值' },
+  { field: 'volumeRatio', label: '量比' },
+];
 
 // ========== 工具函数 ==========
 
@@ -109,6 +145,61 @@ const saveFiltersToStorage = (filters: FilterConditions): void => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filters));
   } catch (error) {
     console.warn('保存筛选条件失败:', error);
+  }
+};
+
+// 方案存储
+const loadSchemesFromStorage = (): SavedScheme[] => {
+  try {
+    const stored = localStorage.getItem(SCHEMES_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('读取方案失败:', error);
+  }
+  return [];
+};
+
+const saveSchemesToStorage = (schemes: SavedScheme[]): void => {
+  try {
+    localStorage.setItem(SCHEMES_STORAGE_KEY, JSON.stringify(schemes));
+  } catch (error) {
+    console.warn('保存方案失败:', error);
+  }
+};
+
+// 最近使用存储
+const loadRecentUsageFromStorage = (): RecentUsage[] => {
+  try {
+    const stored = localStorage.getItem(RECENT_USAGE_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.warn('读取最近使用失败:', error);
+  }
+  return [];
+};
+
+const saveRecentUsageToStorage = (recentUsage: RecentUsage[]): void => {
+  try {
+    localStorage.setItem(RECENT_USAGE_STORAGE_KEY, JSON.stringify(recentUsage));
+  } catch (error) {
+    console.warn('保存最近使用失败:', error);
+  }
+};
+
+const addRecentUsage = (filters: FilterConditions): void => {
+  const recent = loadRecentUsageFromStorage();
+  const newEntry: RecentUsage = { filters, usedAt: Date.now() };
+  // 检查是否已存在相同配置
+  const isDuplicate = recent.some(
+    (r) => JSON.stringify(r.filters) === JSON.stringify(filters)
+  );
+  if (!isDuplicate) {
+    const updated = [newEntry, ...recent].slice(0, MAX_RECENT_USAGE);
+    saveRecentUsageToStorage(updated);
   }
 };
 
@@ -271,10 +362,16 @@ function StockCard({
   stock,
   index,
   onAddWatchlist,
+  isSelected,
+  onToggleSelect,
+  showSelect,
 }: {
   stock: StockData;
   index: number;
   onAddWatchlist: (code: string, name: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (code: string) => void;
+  showSelect?: boolean;
 }) {
   const navigate = useNavigate();
   const isPositive = stock.changePercent >= 0;
@@ -290,9 +387,14 @@ function StockCard({
     navigate(`/s/${marketPrefix}${stock.code}`);
   };
 
+  const handleSelectClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleSelect?.(stock.code);
+  };
+
   return (
     <motion.div
-      className={`${styles.stockCard} ${isPositive ? styles.positive : styles.negative}`}
+      className={`${styles.stockCard} ${isPositive ? styles.positive : styles.negative} ${isSelected ? styles.selected : ''}`}
       initial={{ opacity: 0, y: 30, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
@@ -310,6 +412,11 @@ function StockCard({
       <div className={styles.stockHeader}>
         <div className={styles.stockInfo}>
           <div className={styles.stockNameRow}>
+            {showSelect && (
+              <button className={styles.selectBtn} onClick={handleSelectClick}>
+                {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+              </button>
+            )}
             <h3 className={styles.stockName}>{stock.name}</h3>
           </div>
           <span className={styles.stockCode}>{stock.code}</span>
@@ -454,6 +561,22 @@ export function EndOfDayPicker() {
   const [stocks, setStocks] = useState<StockData[]>([]);
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const abortRef = useRef(false);
+
+  // 方案管理
+  const [savedSchemes, setSavedSchemes] = useState<SavedScheme[]>(loadSchemesFromStorage);
+  const [recentUsage, setRecentUsage] = useState<RecentUsage[]>(loadRecentUsageFromStorage);
+  const [showSchemePanel, setShowSchemePanel] = useState(false);
+  const [showRecentPanel, setShowRecentPanel] = useState(false);
+  const [newSchemeName, setNewSchemeName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
+
+  // 排序
+  const [sortField, setSortField] = useState<SortField>('timelineAboveAvgRatio');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  // 批量选择
+  const [selectedStocks, setSelectedStocks] = useState<Set<string>>(new Set());
+  const [showSelectMode, setShowSelectMode] = useState(false);
 
   // 保存筛选条件
   useEffect(() => {
@@ -610,6 +733,10 @@ export function EndOfDayPicker() {
     setStocks([]);
     abortRef.current = false;
 
+    // 记录最近使用
+    addRecentUsage(filters);
+    setRecentUsage(loadRecentUsageFromStorage());
+
     try {
       // 第一阶段：获取全市场行情
       const quotes = await getAllAShareQuotes({
@@ -682,6 +809,115 @@ export function EndOfDayPicker() {
   const handleFilterChange = (key: keyof FilterConditions, value: number | boolean) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
+
+  // 保存方案
+  const handleSaveScheme = useCallback(() => {
+    if (!newSchemeName.trim()) {
+      toast.warning('请输入方案名称');
+      return;
+    }
+    const newScheme: SavedScheme = {
+      id: Date.now().toString(),
+      name: newSchemeName.trim(),
+      filters: { ...filters },
+      createdAt: Date.now(),
+    };
+    const updated = [...savedSchemes, newScheme];
+    setSavedSchemes(updated);
+    saveSchemesToStorage(updated);
+    setNewSchemeName('');
+    setShowSaveInput(false);
+    toast.success(`方案「${newScheme.name}」已保存`);
+  }, [newSchemeName, filters, savedSchemes, toast]);
+
+  // 加载方案
+  const handleLoadScheme = useCallback((scheme: SavedScheme) => {
+    setFilters(scheme.filters);
+    setShowSchemePanel(false);
+    toast.success(`已加载方案「${scheme.name}」`);
+  }, [toast]);
+
+  // 删除方案
+  const handleDeleteScheme = useCallback((schemeId: string) => {
+    const updated = savedSchemes.filter((s) => s.id !== schemeId);
+    setSavedSchemes(updated);
+    saveSchemesToStorage(updated);
+    toast.success('方案已删除');
+  }, [savedSchemes, toast]);
+
+  // 加载最近使用
+  const handleLoadRecent = useCallback((recent: RecentUsage) => {
+    setFilters(recent.filters);
+    setShowRecentPanel(false);
+    toast.success('已加载历史配置');
+  }, [toast]);
+
+  // 排序股票
+  const sortedStocks = useMemo(() => {
+    return [...stocks].sort((a, b) => {
+      const aVal = a[sortField] ?? 0;
+      const bVal = b[sortField] ?? 0;
+      return sortOrder === 'desc' ? (bVal as number) - (aVal as number) : (aVal as number) - (bVal as number);
+    });
+  }, [stocks, sortField, sortOrder]);
+
+  // 切换排序
+  const handleSortChange = useCallback((field: SortField) => {
+    if (field === sortField) {
+      setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  }, [sortField]);
+
+  // 切换选择
+  const handleToggleSelect = useCallback((code: string) => {
+    setSelectedStocks((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(code)) {
+        newSet.delete(code);
+      } else {
+        newSet.add(code);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // 全选/取消全选
+  const handleSelectAll = useCallback(() => {
+    if (selectedStocks.size === sortedStocks.length) {
+      setSelectedStocks(new Set());
+    } else {
+      setSelectedStocks(new Set(sortedStocks.map((s) => s.code)));
+    }
+  }, [selectedStocks.size, sortedStocks]);
+
+  // 批量加入自选
+  const handleBatchAddWatchlist = useCallback(() => {
+    let addedCount = 0;
+    selectedStocks.forEach((code) => {
+      const stock = stocks.find((s) => s.code === code);
+      if (stock && !isInWatchlist(code)) {
+        const marketPrefix =
+          code.startsWith('6') || code.startsWith('9')
+            ? 'sh'
+            : code.startsWith('4') || code.startsWith('8')
+              ? 'bj'
+              : 'sz';
+        addToWatchlist(`${marketPrefix}${code}`);
+        addedCount++;
+      }
+    });
+    if (addedCount > 0) {
+      toast.success(`已将 ${addedCount} 只股票加入自选`);
+      setStocks((prev) => [...prev]); // 刷新状态
+    } else {
+      toast.info('所选股票已在自选中');
+    }
+    setSelectedStocks(new Set());
+    setShowSelectMode(false);
+  }, [selectedStocks, stocks, toast]);
 
   return (
     <div className={styles.container}>
@@ -766,19 +1002,46 @@ export function EndOfDayPicker() {
                               e.stopPropagation();
                               handleResetFilters();
                             }}
+                            title="恢复默认"
                           >
                             <RotateCcw size={14} />
-                            恢复默认
+                            默认
+                          </button>
+                          <button
+                            className={styles.schemeBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowSchemePanel(!showSchemePanel);
+                              setShowRecentPanel(false);
+                            }}
+                            title="管理方案"
+                          >
+                            <FolderOpen size={14} />
+                            方案
+                          </button>
+                          <button
+                            className={styles.recentBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowRecentPanel(!showRecentPanel);
+                              setShowSchemePanel(false);
+                            }}
+                            title="最近使用"
+                          >
+                            <Clock size={14} />
+                            历史
                           </button>
                           <button
                             className={styles.saveBtn}
                             onClick={(e) => {
                               e.stopPropagation();
                               setIsEditing(false);
+                              setShowSchemePanel(false);
+                              setShowRecentPanel(false);
                             }}
                           >
                             <Check size={14} />
-                            保存
+                            完成
                           </button>
                         </motion.div>
                       ) : (
@@ -795,6 +1058,110 @@ export function EndOfDayPicker() {
                     </AnimatePresence>
                   </div>
                 </div>
+
+                {/* 方案管理面板 */}
+                <AnimatePresence>
+                  {showSchemePanel && (
+                    <motion.div
+                      className={styles.schemePanel}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className={styles.schemePanelHeader}>
+                        <span>保存的方案</span>
+                        <button
+                          className={styles.addSchemeBtn}
+                          onClick={() => setShowSaveInput(!showSaveInput)}
+                        >
+                          <Plus size={14} />
+                          保存当前
+                        </button>
+                      </div>
+                      {showSaveInput && (
+                        <div className={styles.saveInputRow}>
+                          <input
+                            type="text"
+                            placeholder="输入方案名称"
+                            value={newSchemeName}
+                            onChange={(e) => setNewSchemeName(e.target.value)}
+                            className={styles.schemeNameInput}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSaveScheme()}
+                          />
+                          <button className={styles.confirmSaveBtn} onClick={handleSaveScheme}>
+                            <Save size={14} />
+                          </button>
+                        </div>
+                      )}
+                      {savedSchemes.length > 0 ? (
+                        <div className={styles.schemeList}>
+                          {savedSchemes.map((scheme) => (
+                            <div key={scheme.id} className={styles.schemeItem}>
+                              <button
+                                className={styles.schemeLoadBtn}
+                                onClick={() => handleLoadScheme(scheme)}
+                              >
+                                {scheme.name}
+                              </button>
+                              <button
+                                className={styles.schemeDeleteBtn}
+                                onClick={() => handleDeleteScheme(scheme.id)}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={styles.emptyHint}>暂无保存的方案</p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* 最近使用面板 */}
+                <AnimatePresence>
+                  {showRecentPanel && (
+                    <motion.div
+                      className={styles.recentPanel}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className={styles.schemePanelHeader}>
+                        <span>最近使用</span>
+                      </div>
+                      {recentUsage.length > 0 ? (
+                        <div className={styles.schemeList}>
+                          {recentUsage.map((recent, idx) => (
+                            <button
+                              key={idx}
+                              className={styles.recentItem}
+                              onClick={() => handleLoadRecent(recent)}
+                            >
+                              <span className={styles.recentSummary}>
+                                市值 {recent.filters.marketCapMin}-{recent.filters.marketCapMax}亿 · 
+                                涨幅 {recent.filters.changePercentMin}-{recent.filters.changePercentMax}%
+                              </span>
+                              <span className={styles.recentTime}>
+                                {new Date(recent.usedAt).toLocaleString('zh-CN', {
+                                  month: 'numeric',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className={styles.emptyHint}>暂无使用记录</p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className={styles.filterGrid}>
                   {/* 流通市值 */}
@@ -1010,37 +1377,101 @@ export function EndOfDayPicker() {
                     共筛选出 <strong>{stocks.length}</strong> 只符合条件的股票
                   </span>
                 </motion.div>
-                <motion.button
-                  className={styles.backButton}
-                  onClick={() => {
-                    setHasAnalyzed(false);
-                    setStocks([]);
-                  }}
+                <motion.div
+                  className={styles.resultsActions}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
                 >
-                  <ChevronLeft size={18} />
-                  重新筛选
-                </motion.button>
+                  {/* 批量选择按钮 */}
+                  {stocks.length > 0 && (
+                    <button
+                      className={`${styles.selectModeBtn} ${showSelectMode ? styles.active : ''}`}
+                      onClick={() => {
+                        setShowSelectMode(!showSelectMode);
+                        if (showSelectMode) {
+                          setSelectedStocks(new Set());
+                        }
+                      }}
+                    >
+                      {showSelectMode ? <X size={16} /> : <CheckSquare size={16} />}
+                      {showSelectMode ? '取消' : '批量选'}
+                    </button>
+                  )}
+                  <button
+                    className={styles.backButton}
+                    onClick={() => {
+                      setHasAnalyzed(false);
+                      setStocks([]);
+                      setShowSelectMode(false);
+                      setSelectedStocks(new Set());
+                    }}
+                  >
+                    <ChevronLeft size={18} />
+                    重新筛选
+                  </button>
+                </motion.div>
               </div>
 
+              {/* 排序和批量操作栏 */}
+              {stocks.length > 0 && (
+                <motion.div
+                  className={styles.sortBar}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <div className={styles.sortSection}>
+                    <ArrowUpDown size={14} />
+                    <span className={styles.sortLabel}>排序：</span>
+                    {SORT_OPTIONS.map((option) => (
+                      <button
+                        key={option.field}
+                        className={`${styles.sortOption} ${sortField === option.field ? styles.active : ''}`}
+                        onClick={() => handleSortChange(option.field)}
+                      >
+                        {option.label}
+                        {sortField === option.field && (
+                          sortOrder === 'desc' ? <ArrowDown size={12} /> : <ArrowUp size={12} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {showSelectMode && (
+                    <div className={styles.batchSection}>
+                      <button className={styles.selectAllBtn} onClick={handleSelectAll}>
+                        {selectedStocks.size === sortedStocks.length ? '取消全选' : '全选'}
+                      </button>
+                      <button
+                        className={styles.batchAddBtn}
+                        onClick={handleBatchAddWatchlist}
+                        disabled={selectedStocks.size === 0}
+                      >
+                        <Plus size={14} />
+                        加入自选 ({selectedStocks.size})
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
               {/* 结果列表 */}
-              {stocks.length > 0 ? (
+              {sortedStocks.length > 0 ? (
                 <motion.div
                   className={styles.stockGrid}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.4 }}
                 >
-                  {stocks.map((stock, index) => (
+                  {sortedStocks.map((stock, index) => (
                     <StockCard
                       key={stock.code}
                       stock={stock}
                       index={index}
                       onAddWatchlist={handleAddWatchlist}
+                      isSelected={selectedStocks.has(stock.code)}
+                      onToggleSelect={handleToggleSelect}
+                      showSelect={showSelectMode}
                     />
                   ))}
                 </motion.div>

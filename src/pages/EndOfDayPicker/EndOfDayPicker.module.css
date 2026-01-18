@@ -684,6 +684,319 @@
   font-family: var(--font-mono);
 }
 
+/* 方案按钮样式 */
+.schemeBtn,
+.recentBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.schemeBtn:hover,
+.recentBtn:hover {
+  color: var(--text-primary);
+  background: var(--border-primary);
+}
+
+/* 方案管理面板 */
+.schemePanel,
+.recentPanel {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.schemePanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.addSchemeBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+  transition: all var(--transition-fast);
+}
+
+.addSchemeBtn:hover {
+  background: rgba(88, 166, 255, 0.2);
+}
+
+.saveInputRow {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.schemeNameInput {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.schemeNameInput:focus {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.confirmSaveBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: white;
+  background: var(--color-accent);
+  transition: background var(--transition-fast);
+}
+
+.confirmSaveBtn:hover {
+  background: var(--color-accent-hover);
+}
+
+.schemeList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schemeItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.schemeLoadBtn {
+  flex: 1;
+  padding: var(--spacing-sm);
+  text-align: left;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  transition: all var(--transition-fast);
+}
+
+.schemeLoadBtn:hover {
+  background: var(--border-primary);
+}
+
+.schemeDeleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.schemeDeleteBtn:hover {
+  color: var(--color-danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.recentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  transition: all var(--transition-fast);
+}
+
+.recentItem:hover {
+  background: var(--border-primary);
+}
+
+.recentSummary {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.recentTime {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+.emptyHint {
+  padding: var(--spacing-md);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+}
+
+/* 结果操作区 */
+.resultsActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.selectModeBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.selectModeBtn:hover {
+  color: var(--text-primary);
+  background: var(--border-primary);
+}
+
+.selectModeBtn.active {
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* 排序栏 */
+.sortBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.sortSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-tertiary);
+}
+
+.sortLabel {
+  font-size: var(--font-size-xs);
+}
+
+.sortOption {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.sortOption:hover {
+  color: var(--text-primary);
+  background: var(--border-primary);
+}
+
+.sortOption.active {
+  color: var(--color-accent);
+  background: var(--color-accent-bg);
+}
+
+/* 批量操作区 */
+.batchSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.selectAllBtn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.selectAllBtn:hover {
+  color: var(--text-primary);
+  background: var(--border-primary);
+}
+
+.batchAddBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: white;
+  background: var(--color-accent);
+  transition: all var(--transition-fast);
+}
+
+.batchAddBtn:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.batchAddBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 选择按钮 */
+.selectBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+.selectBtn:hover {
+  color: var(--color-accent);
+}
+
+.stockCard.selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.stockCard.selected .selectBtn {
+  color: var(--color-accent);
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .filterGrid {
@@ -699,8 +1012,27 @@
     gap: var(--spacing-md);
   }
 
+  .resultsActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sortBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sortSection {
+    flex-wrap: wrap;
+  }
+
   .startButton {
     width: 140px;
     height: 140px;
+  }
+
+  .editActions {
+    flex-wrap: wrap;
+    gap: 4px;
   }
 }
