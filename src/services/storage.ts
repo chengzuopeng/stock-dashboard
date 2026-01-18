@@ -223,6 +223,60 @@ export function renameWatchlistGroup(groupId: string, name: string): void {
   }
 }
 
+/**
+ * 批量从自选移除股票
+ */
+export function batchRemoveFromWatchlist(codes: string[], groupId: string): void {
+  const normalizedCodes = codes.map(normalizeStockCode).filter(Boolean) as string[];
+  if (normalizedCodes.length === 0) return;
+  
+  const groups = getWatchlistGroups();
+  const group = groups.find((g) => g.id === groupId);
+  if (group) {
+    group.codes = group.codes.filter((c) => !normalizedCodes.includes(c));
+    group.updatedAt = Date.now();
+    saveWatchlistGroups(groups);
+  }
+}
+
+/**
+ * 批量添加股票到自选
+ */
+export function batchAddToWatchlist(codes: string[], groupId = 'default'): number {
+  const groups = getWatchlistGroups();
+  const group = groups.find((g) => g.id === groupId);
+  if (!group) return 0;
+  
+  let addedCount = 0;
+  codes.forEach((code) => {
+    const normalizedCode = normalizeStockCode(code);
+    if (normalizedCode && !group.codes.includes(normalizedCode)) {
+      group.codes.push(normalizedCode);
+      addedCount++;
+    }
+  });
+  
+  if (addedCount > 0) {
+    group.updatedAt = Date.now();
+    saveWatchlistGroups(groups);
+  }
+  
+  return addedCount;
+}
+
+/**
+ * 更新分组内股票顺序
+ */
+export function reorderWatchlist(groupId: string, codes: string[]): void {
+  const groups = getWatchlistGroups();
+  const group = groups.find((g) => g.id === groupId);
+  if (group) {
+    group.codes = codes.map(normalizeStockCode).filter(Boolean) as string[];
+    group.updatedAt = Date.now();
+    saveWatchlistGroups(groups);
+  }
+}
+
 // ========== 告警规则 ==========
 
 /**
