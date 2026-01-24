@@ -136,9 +136,9 @@ export function Watchlist() {
     }
   }, [normalizedActiveCodes]);
 
-  // 轮询
+  // 轮询（优化：从 5s 改为 10s，减少 API 请求）
   usePolling(fetchQuotes, {
-    interval: 5000,
+    interval: 10000,
     enabled: normalizedActiveCodes.length > 0,
     immediate: true,
   });

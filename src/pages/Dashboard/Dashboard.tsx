@@ -2,17 +2,14 @@
  * 总览页面
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Card, Tabs, Loading, Empty, Button } from '@/components/common';
 import { usePolling } from '@/hooks';
-import {
-  getFullQuotes,
-  getIndustryList,
-  getConceptList,
-} from '@/services/sdk';
+import { useBoardData } from '@/contexts';
+import { getFullQuotes } from '@/services/sdk';
 import { getAllWatchlistCodes } from '@/services/storage';
 import {
   formatPrice,
@@ -20,7 +17,7 @@ import {
   formatAmount,
   getChangeColorClass,
 } from '@/utils/format';
-import type { FullQuote, IndustryBoard, ConceptBoard } from 'stock-sdk';
+import type { FullQuote } from 'stock-sdk';
 import styles from './Dashboard.module.css';
 
 // 主要指数
@@ -44,60 +41,50 @@ const RANKING_TABS = [
 export function Dashboard() {
   const navigate = useNavigate();
 
-  // 数据状态
+  // 使用共享的板块数据（优化：避免重复请求）
+  const { industryList, conceptList, loading: boardLoading } = useBoardData();
+
+  // 本地数据状态
   const [indices, setIndices] = useState<FullQuote[]>([]);
   const [watchlistQuotes, setWatchlistQuotes] = useState<FullQuote[]>([]);
-  const [industryList, setIndustryList] = useState<IndustryBoard[]>([]);
-  const [conceptList, setConceptList] = useState<ConceptBoard[]>([]);
   const [rankingTab, setRankingTab] = useState('rise');
   const [boardTab, setBoardTab] = useState<'industry' | 'concept'>('industry');
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // 获取自选代码
   const watchlistCodes = getAllWatchlistCodes();
 
-  // 加载数据
-  const fetchData = useCallback(async () => {
+  // 只加载指数和自选数据（板块数据由全局 Context 提供）
+  const fetchQuoteData = useCallback(async () => {
     try {
-      const [indicesData, boardIndustry, boardConcept] = await Promise.all([
-        getFullQuotes(MAIN_INDICES),
-        getIndustryList(),
-        getConceptList(),
-      ]);
-
+      // 获取指数行情
+      const indicesData = await getFullQuotes(MAIN_INDICES);
       setIndices(indicesData);
-      setIndustryList(boardIndustry);
-      setConceptList(boardConcept);
 
       // 如果有自选，获取自选行情
       if (watchlistCodes.length > 0) {
         const watchlistData = await getFullQuotes(watchlistCodes.slice(0, 50));
         setWatchlistQuotes(watchlistData);
       }
-
-      // 获取榜单数据（从行业成分取部分）
-      // 这里简化处理，实际应调用 getAllAShareQuotes
-      const topStocks = boardIndustry
-        .slice(0, 10)
-        .map((b) => b.leadingStock)
-        .filter(Boolean);
-      if (topStocks.length > 0) {
-      // 暂时使用模拟数据
+    } catch (error) {
+      console.error('Dashboard fetch error:', error);
+    } finally {
+      // 无论成功或失败，都结束初始加载状态
+      setInitialLoading(false);
     }
-
-    setLoading(false);
-  } catch (error) {
-    console.error('Dashboard fetch error:', error);
-    setLoading(false);
-  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [watchlistCodes.length]);
+  }, [watchlistCodes.length]);
 
-  // 轮询
-  usePolling(fetchData, {
-    interval: 5000,
-    enabled: true,
-    immediate: true,
+  // 初始加载
+  useEffect(() => {
+    fetchQuoteData();
+  }, [fetchQuoteData]);
+
+  // 轮询指数和自选数据（优化：只轮询需要实时更新的数据）
+  usePolling(fetchQuoteData, {
+    interval: 15000,
+    enabled: !initialLoading,
+    immediate: false,
   });
 
   // 跳转详情
@@ -110,7 +97,8 @@ export function Dashboard() {
     navigate(`/boards/${type}/${code}`);
   };
 
-  if (loading) {
+  // 只在初始加载时显示 loading，之后即使数据获取失败也显示页面
+  if (initialLoading && boardLoading) {
     return <Loading fullScreen text="加载中..." />;
   }
 

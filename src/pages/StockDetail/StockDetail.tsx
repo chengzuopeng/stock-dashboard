@@ -219,14 +219,15 @@ export function StockDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minutePeriod]);
 
-  // 轮询行情
-  usePolling(fetchQuote, { interval: 2000, enabled: !loading });
+  // 合并轮询：行情 + 分时（优化：从 2s/3s 分别轮询改为统一 5s 轮询，减少请求次数）
+  const fetchRealtimeData = useCallback(async () => {
+    await Promise.all([fetchQuote(), fetchTimeline()]);
+  }, [fetchQuote, fetchTimeline]);
 
-  // 轮询分时
-  usePolling(fetchTimeline, { interval: 3000, enabled: !loading });
+  usePolling(fetchRealtimeData, { interval: 5000, enabled: !loading });
 
-  // 轮询资金
-  usePolling(fetchFundData, { interval: 10000, enabled: !loading });
+  // 轮询资金（优化：从 10s 改为 30s）
+  usePolling(fetchFundData, { interval: 30000, enabled: !loading });
 
   // 切换自选
   const handleToggleWatchlist = () => {

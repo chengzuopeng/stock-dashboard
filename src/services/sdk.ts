@@ -21,14 +21,15 @@ export const sdk = new StockSDK({
 const cache = new Map<string, CacheItem<unknown>>();
 
 // 默认 TTL 配置（毫秒）
+// 优化：增加缓存时间以减少 API 请求频率
 const DEFAULT_TTL = {
-  boardList: 30000, // 板块列表 30s
-  constituents: 120000, // 成分股 2min
+  boardList: 60000, // 板块列表 60s（从 30s 增加）
+  constituents: 180000, // 成分股 3min（从 2min 增加）
   historyKline: 600000, // 历史 K 线 10min
   indicatorKline: 600000, // 指标 K 线 10min
-  quotes: 3000, // 实时行情 3s
-  fundFlow: 10000, // 资金流 10s
-  timeline: 3000, // 分时 3s
+  quotes: 5000, // 实时行情 5s（从 3s 增加）
+  fundFlow: 30000, // 资金流 30s（从 10s 增加）
+  timeline: 5000, // 分时 5s（从 3s 增加）
 };
 
 /**

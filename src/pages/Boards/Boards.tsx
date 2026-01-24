@@ -2,20 +2,18 @@
  * 板块页面
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Building2, Lightbulb, Search } from 'lucide-react';
 import { Card, Tabs, Loading, Empty } from '@/components/common';
-import { usePolling } from '@/hooks';
-import { getIndustryList, getConceptList } from '@/services/sdk';
+import { useBoardData } from '@/contexts';
 import {
   formatPercent,
   formatMarketCap,
   formatTurnover,
   getChangeColorClass,
 } from '@/utils/format';
-import type { IndustryBoard, ConceptBoard } from 'stock-sdk';
 import styles from './Boards.module.css';
 
 // 板块类型
@@ -27,35 +25,12 @@ const BOARD_TYPES = [
 export function Boards() {
   const navigate = useNavigate();
 
-  // 状态
+  // 使用共享的板块数据（优化：避免重复请求）
+  const { industryList, conceptList, loading } = useBoardData();
+
+  // 本地 UI 状态
   const [boardType, setBoardType] = useState<'industry' | 'concept'>('industry');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [industryList, setIndustryList] = useState<IndustryBoard[]>([]);
-  const [conceptList, setConceptList] = useState<ConceptBoard[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // 加载数据
-  const fetchData = useCallback(async () => {
-    try {
-      const [industry, concept] = await Promise.all([
-        getIndustryList(),
-        getConceptList(),
-      ]);
-      setIndustryList(industry);
-      setConceptList(concept);
-      setLoading(false);
-    } catch (error) {
-      console.error('Fetch boards error:', error);
-      setLoading(false);
-    }
-  }, []);
-
-  // 轮询
-  usePolling(fetchData, {
-    interval: 10000,
-    enabled: true,
-    immediate: true,
-  });
 
   // 过滤后的数据
   const filteredData = useMemo(() => {

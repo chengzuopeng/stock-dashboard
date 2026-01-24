@@ -1,66 +1,88 @@
 /* 热力图页面样式 */
 
 .heatmap {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  height: calc(100vh - var(--header-height) - 48px);
-  padding-bottom: var(--spacing-lg);
+  height: calc(100vh - var(--header-height) - 32px);
+  background: var(--bg-primary);
 }
 
-/* 控制栏 */
+/* 控制栏 - 浮动工具栏风格 */
 .controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-md) var(--spacing-lg);
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   background: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-lg);
+  border-bottom: 1px solid var(--border-secondary);
 }
 
 .controlGroup {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.controlGroup::after {
+  content: '';
+  width: 1px;
+  height: 20px;
+  background: var(--border-primary);
+  margin-left: var(--spacing-sm);
+}
+
+.controlGroup:last-child::after {
+  display: none;
 }
 
 .controlLabel {
   font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
-  min-width: 32px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .colorModeBtn {
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 4px 10px;
   font-size: var(--font-size-xs);
+  font-weight: 500;
   color: var(--text-secondary);
-  background: var(--bg-tertiary);
+  background: transparent;
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
 }
 
 .colorModeBtn:hover {
   color: var(--text-primary);
+  border-color: var(--text-tertiary);
 }
 
 .colorModeBtn.active {
   color: var(--color-accent);
+  border-color: var(--color-accent);
   background: var(--color-accent-bg);
 }
 
-/* 图表卡片 */
+/* 图表容器 - 全屏充满 */
 .chartCard {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 .chartWrapper {
   flex: 1;
-  min-height: 450px;
   width: 100%;
+  padding: var(--spacing-sm);
 }
 
 .emptyState {
@@ -69,57 +91,77 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   color: var(--text-tertiary);
 }
 
-/* 图例 */
+.emptyState p {
+  font-size: var(--font-size-sm);
+}
+
+/* 图例 - 简洁紧凑 */
 .legend {
   display: flex;
   justify-content: center;
-  padding: var(--spacing-sm);
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-secondary);
 }
 
 .legendBar {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .legendLabel {
-  font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .legendGradient {
-  width: 200px;
-  height: 8px;
-  border-radius: var(--radius-sm);
+  width: 160px;
+  height: 6px;
+  border-radius: 3px;
   background: linear-gradient(
     to right,
     var(--color-fall),
     var(--color-flat),
     var(--color-rise)
   );
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* 响应式 */
 @media (max-width: 1024px) {
   .controls {
-    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
   }
 
-  .controlGroup {
-    flex-wrap: wrap;
+  .controlGroup::after {
+    display: none;
   }
 }
 
 @media (max-width: 768px) {
   .heatmap {
-    height: auto;
+    height: calc(100vh - var(--header-height) - 16px);
   }
 
-  .chartWrapper {
-    min-height: 400px;
+  .controls {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .controlLabel {
+    display: none;
+  }
+
+  .legendGradient {
+    width: 120px;
   }
 }

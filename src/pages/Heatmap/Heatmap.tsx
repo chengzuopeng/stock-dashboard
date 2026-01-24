@@ -7,16 +7,13 @@ import { useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import { motion } from 'framer-motion';
 import { Grid3X3, Building2, Lightbulb, Star } from 'lucide-react';
-import { Card, Tabs, Loading } from '@/components/common';
+import { Tabs, Loading } from '@/components/common';
 import { usePolling } from '@/hooks';
-import {
-  getIndustryList,
-  getConceptList,
-  getAllQuotesByCodes,
-} from '@/services/sdk';
+import { useBoardData } from '@/contexts';
+import { getAllQuotesByCodes, getIndustryConstituents } from '@/services/sdk';
 import { getAllWatchlistCodes, getHeatmapConfig, saveHeatmapConfig } from '@/services/storage';
 import { formatPercent, formatAmount } from '@/utils/format';
-import type { IndustryBoard, ConceptBoard, FullQuote } from 'stock-sdk';
+import type { FullQuote } from 'stock-sdk';
 import type { HeatmapConfig } from '@/types';
 import styles from './Heatmap.module.css';
 
@@ -45,13 +42,13 @@ const SIZE_FIELD_OPTIONS = [
 export function Heatmap() {
   const navigate = useNavigate();
   
+  // 使用共享的板块数据（优化：避免重复请求）
+  const { industryList, conceptList, loading: boardLoading } = useBoardData();
+
   // 配置状态
   const [config, setConfig] = useState<HeatmapConfig>(getHeatmapConfig);
-  const [loading, setLoading] = useState(true);
 
-  // 数据状态
-  const [industryList, setIndustryList] = useState<IndustryBoard[]>([]);
-  const [conceptList, setConceptList] = useState<ConceptBoard[]>([]);
+  // 个股数据状态
   const [stockQuotes, setStockQuotes] = useState<FullQuote[]>([]);
 
   // 更新配置
@@ -61,30 +58,13 @@ export function Heatmap() {
     saveHeatmapConfig(newConfig);
   };
 
-  // 加载板块数据
-  const fetchBoardData = useCallback(async () => {
-    try {
-      const [industry, concept] = await Promise.all([
-        getIndustryList(),
-        getConceptList(),
-      ]);
-      setIndustryList(industry);
-      setConceptList(concept);
-      setLoading(false);
-    } catch (error) {
-      console.error('Fetch board data error:', error);
-      setLoading(false);
-    }
-  }, []);
-
-  // 加载个股数据
+  // 加载个股数据（只在自选或个股模式时调用）
   const fetchStockData = useCallback(async () => {
     if (config.dimension !== 'stock' && config.dimension !== 'watchlist') return;
 
     try {
-      let codes: string[] = [];
       if (config.dimension === 'watchlist') {
-        codes = getAllWatchlistCodes();
+        const codes = getAllWatchlistCodes();
         if (codes.length > 0) {
           const quotes = await getAllQuotesByCodes(codes.slice(0, config.topK));
           setStockQuotes(quotes);
@@ -92,9 +72,7 @@ export function Heatmap() {
           setStockQuotes([]);
         }
       } else {
-        // 个股模式：从行业板块的成分股中获取（取前几个行业的领涨股）
-        // 首先获取行业成分股中的代码
-        const { getIndustryConstituents } = await import('@/services/sdk');
+        // 个股模式：从行业板块的成分股中获取
         const allStocks: FullQuote[] = [];
         
         // 获取前3个行业的成分股
@@ -102,7 +80,6 @@ export function Heatmap() {
         for (const industry of topIndustries) {
           try {
             const constituents = await getIndustryConstituents(industry.code);
-            // 获取成分股代码
             const stockCodes = constituents.slice(0, 10).map((c) => c.code);
             if (stockCodes.length > 0) {
               const quotes = await getAllQuotesByCodes(stockCodes);
@@ -125,30 +102,21 @@ export function Heatmap() {
     }
   }, [config.dimension, config.topK, industryList]);
 
-  // 初始加载
-  useEffect(() => {
-     
-    fetchBoardData();
-  }, [fetchBoardData]);
-
-  // 维度变化时加载数据
+  // 维度变化时加载个股数据
   useEffect(() => {
     if (config.dimension === 'stock' || config.dimension === 'watchlist') {
-       
       fetchStockData();
     }
   }, [config.dimension, fetchStockData]);
 
-  // 轮询
-  usePolling(
-    config.dimension === 'industry' || config.dimension === 'concept'
-      ? fetchBoardData
-      : fetchStockData,
-    {
-      interval: config.dimension === 'stock' ? 5000 : 15000,
-      enabled: !loading,
-    }
-  );
+  // 轮询个股数据（板块数据由全局 Context 管理，无需轮询）
+  usePolling(fetchStockData, {
+    interval: 10000,
+    enabled: !boardLoading && (config.dimension === 'stock' || config.dimension === 'watchlist'),
+  });
+
+  // 兼容旧逻辑的 loading 状态
+  const loading = boardLoading;
 
   // 获取颜色值（根据 colorField 配置）
   const getColorValue = (item: { changePercent?: number | null; turnoverRate?: number | null; volumeRatio?: number | null }) => {
@@ -267,38 +235,42 @@ export function Heatmap() {
     return {
       backgroundColor: 'transparent',
       tooltip: {
-        backgroundColor: '#1c2128',
+        backgroundColor: 'rgba(28, 33, 40, 0.96)',
         borderColor: '#30363d',
+        borderWidth: 1,
+        padding: [10, 14],
         textStyle: { color: '#e6edf3', fontSize: 12 },
+        extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-radius: 8px;',
         formatter: (params: { data: Record<string, unknown> }) => {
           const data = params.data;
           if (!data || !data.name) return '';
           
-          let content = `<div style="font-weight:500;margin-bottom:4px;">${data.name}</div>`;
+          let content = `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#fff;">${data.name}</div>`;
           
           if (data.changePercent !== undefined && data.changePercent !== null) {
             const changePercent = data.changePercent as number;
             const color = changePercent > 0 ? '#ef4444' : changePercent < 0 ? '#22c55e' : '#8b949e';
-            content += `<div style="color:${color}">涨跌幅: ${formatPercent(changePercent)}</div>`;
+            content += `<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:#8b949e">涨跌幅</span><span style="color:${color};font-weight:500">${formatPercent(changePercent)}</span></div>`;
           }
           
           if (data.turnoverRate !== undefined && data.turnoverRate !== null) {
-            content += `<div>换手率: ${(data.turnoverRate as number).toFixed(2)}%</div>`;
+            content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:#8b949e">换手率</span><span>${(data.turnoverRate as number).toFixed(2)}%</span></div>`;
           }
           
           if (data.leadingStock) {
             const leadingChange = data.leadingStockChangePercent as number | null;
-            content += `<div style="margin-top:4px;color:#8b949e">领涨: ${data.leadingStock} ${leadingChange != null ? formatPercent(leadingChange) : ''}</div>`;
+            const leadingColor = leadingChange != null && leadingChange > 0 ? '#ef4444' : leadingChange != null && leadingChange < 0 ? '#22c55e' : '#8b949e';
+            content += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #30363d;"><span style="color:#6e7681;font-size:11px">领涨</span><div style="margin-top:2px;display:flex;justify-content:space-between;"><span>${data.leadingStock}</span><span style="color:${leadingColor}">${leadingChange != null ? formatPercent(leadingChange) : ''}</span></div></div>`;
           }
           
           if (data.riseCount !== undefined && data.riseCount !== null) {
-            content += `<div style="color:#8b949e">${data.riseCount}↑ ${data.fallCount ?? 0}↓</div>`;
+            content += `<div style="margin-top:6px;font-size:11px;color:#6e7681"><span style="color:#ef4444">${data.riseCount}↑</span> <span style="color:#22c55e">${data.fallCount ?? 0}↓</span></div>`;
           }
           
           if (data.price !== undefined && data.price !== null) {
-            content += `<div>现价: ${(data.price as number).toFixed(2)}</div>`;
+            content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:#8b949e">现价</span><span>${(data.price as number).toFixed(2)}</span></div>`;
             if (data.amount !== undefined && data.amount !== null) {
-              content += `<div>成交额: ${formatAmount(data.amount as number)}</div>`;
+              content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:#8b949e">成交额</span><span>${formatAmount(data.amount as number)}</span></div>`;
             }
           }
           
@@ -326,34 +298,41 @@ export function Heatmap() {
             },
             rich: {
               name: {
-                fontSize: 12,
-                color: '#e6edf3',
-                fontWeight: 500,
+                fontSize: 13,
+                color: '#fff',
+                fontWeight: 600,
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowBlur: 2,
               },
               change: {
-                fontSize: 11,
-                color: '#e6edf3',
-                padding: [4, 0, 0, 0],
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.9)',
+                padding: [3, 0, 0, 0],
+                textShadowColor: 'rgba(0,0,0,0.5)',
+                textShadowBlur: 2,
               },
             },
           },
           itemStyle: {
             borderColor: '#0d1117',
-            borderWidth: 2,
-            gapWidth: 2,
+            borderWidth: 1,
+            gapWidth: 1,
           },
           emphasis: {
             itemStyle: {
-              borderColor: '#388bfd',
+              borderColor: '#58a6ff',
               borderWidth: 2,
+            },
+            label: {
+              show: true,
             },
           },
           levels: [
             {
               itemStyle: {
                 borderColor: '#0d1117',
-                borderWidth: 2,
-                gapWidth: 2,
+                borderWidth: 1,
+                gapWidth: 1,
               },
             },
           ],
@@ -386,11 +365,11 @@ export function Heatmap() {
       {/* 控制栏 */}
       <motion.div
         className={styles.controls}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
       >
         <div className={styles.controlGroup}>
-          <span className={styles.controlLabel}>维度</span>
           <Tabs
             items={DIMENSION_OPTIONS}
             activeKey={config.dimension}
@@ -420,7 +399,6 @@ export function Heatmap() {
         </div>
 
         <div className={styles.controlGroup}>
-          <span className={styles.controlLabel}>色彩</span>
           <button
             className={`${styles.colorModeBtn} ${config.colorMode === 'red-rise' ? styles.active : ''}`}
             onClick={() => updateConfig({ colorMode: config.colorMode === 'red-rise' ? 'green-rise' : 'red-rise' })}
@@ -431,12 +409,12 @@ export function Heatmap() {
       </motion.div>
 
       {/* 热力图 */}
-      <Card padding="none" className={styles.chartCard}>
+      <div className={styles.chartCard}>
         <div className={styles.chartWrapper}>
           {treemapData.length > 0 ? (
             <ReactECharts
               option={chartOption}
-              style={{ height: '100%', width: '100%', minHeight: '500px' }}
+              style={{ height: '100%', width: '100%' }}
               onEvents={{ click: handleChartClick }}
               notMerge
             />
@@ -447,7 +425,7 @@ export function Heatmap() {
             </div>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* 图例 */}
       <div className={styles.legend}>
