@@ -51,6 +51,14 @@
   color: var(--color-primary);
 }
 
+.toast.warning {
+  border-color: #f59e0b;
+}
+
+.toast.warning .icon {
+  color: #f59e0b;
+}
+
 /* 图标 */
 .icon {
   flex-shrink: 0;

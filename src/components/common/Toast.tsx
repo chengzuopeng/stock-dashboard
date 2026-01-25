@@ -4,11 +4,11 @@
 
 import { useState, useCallback, createContext, useContext, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 import styles from './Toast.module.css';
 
 // Toast 类型
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastMessage {
   id: number;
@@ -20,6 +20,7 @@ interface ToastContextValue {
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
+  warning: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -47,6 +48,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     success: (message: string) => addToast('success', message),
     error: (message: string) => addToast('error', message),
     info: (message: string) => addToast('info', message),
+    warning: (message: string) => addToast('warning', message),
   };
 
   const getIcon = (type: ToastType) => {
@@ -55,6 +57,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         return <CheckCircle size={18} />;
       case 'error':
         return <AlertCircle size={18} />;
+      case 'warning':
+        return <AlertTriangle size={18} />;
       case 'info':
         return <Info size={18} />;
     }
@@ -98,6 +102,7 @@ export function useToast(): ToastContextValue {
       success: () => {},
       error: () => {},
       info: () => {},
+      warning: () => {},
     };
   }
   return context;
