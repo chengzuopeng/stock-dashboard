@@ -2,7 +2,7 @@
  * Tabs 组件
  */
 
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import styles from './Tabs.module.css';
 
@@ -20,6 +20,8 @@ interface TabsProps {
 }
 
 export function Tabs({ items, activeKey, onChange, size = 'md' }: TabsProps) {
+  const layoutId = `tabIndicator-${useId()}`;
+
   return (
     <div className={`${styles.tabs} ${styles[size]}`}>
       {items.map((item) => (
@@ -33,7 +35,7 @@ export function Tabs({ items, activeKey, onChange, size = 'md' }: TabsProps) {
           {activeKey === item.key && (
             <motion.div
               className={styles.indicator}
-              layoutId="tabIndicator"
+              layoutId={layoutId}
               transition={{ type: 'spring', stiffness: 500, damping: 35 }}
             />
           )}
