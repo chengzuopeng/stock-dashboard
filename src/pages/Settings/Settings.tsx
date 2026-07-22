@@ -166,15 +166,7 @@ export function Settings() {
               <div className={styles.colorModeOptions}>
                 <button
                   className={`${styles.colorModeBtn} ${settings.colorMode === 'red-rise' ? styles.active : ''}`}
-                  onClick={() =>
-                    updateSettings({
-                      colorMode: 'red-rise',
-                      heatmapConfig: {
-                        ...settings.heatmapConfig,
-                        colorMode: 'red-rise',
-                      },
-                    })
-                  }
+                  onClick={() => updateSettings({ colorMode: 'red-rise' })}
                 >
                   <span className={styles.riseRed}>涨</span>
                   <span className={styles.fallGreen}>跌</span>
@@ -182,15 +174,7 @@ export function Settings() {
                 </button>
                 <button
                   className={`${styles.colorModeBtn} ${settings.colorMode === 'green-rise' ? styles.active : ''}`}
-                  onClick={() =>
-                    updateSettings({
-                      colorMode: 'green-rise',
-                      heatmapConfig: {
-                        ...settings.heatmapConfig,
-                        colorMode: 'green-rise',
-                      },
-                    })
-                  }
+                  onClick={() => updateSettings({ colorMode: 'green-rise' })}
                 >
                   <span className={styles.riseGreen}>涨</span>
                   <span className={styles.fallRed}>跌</span>

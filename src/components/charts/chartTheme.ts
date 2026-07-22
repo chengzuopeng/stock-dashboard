@@ -10,6 +10,7 @@ export interface ChartColors {
   bgElevated: string;
   textPrimary: string;
   accent: string;
+  bgCard: string;
 }
 
 // 色值与 index.css 的主题变量保持同步。图表 option 在渲染期构建，而 data-theme /
@@ -22,6 +23,7 @@ const DARK_CHROME = {
   bgElevated: '#27272a',
   textPrimary: '#fafafa',
   accent: '#3b82f6',
+  bgCard: '#18181b',
 };
 
 const LIGHT_CHROME = {
@@ -31,7 +33,13 @@ const LIGHT_CHROME = {
   bgElevated: '#e4e4e7',
   textPrimary: '#09090b',
   accent: '#2563eb',
+  bgCard: '#ffffff',
 };
+
+export function withAlpha(hex: string, alpha: number): string {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
 
 export function getChartColors(
   theme: Theme,

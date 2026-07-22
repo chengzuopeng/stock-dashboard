@@ -38,7 +38,6 @@ const DEFAULT_SETTINGS: AppSettings = {
     dimension: 'industry',
     colorField: 'changePercent',
     sizeField: 'totalMarketCap',
-    colorMode: 'red-rise',
     topK: 200,
   },
   indicatorConfig: {

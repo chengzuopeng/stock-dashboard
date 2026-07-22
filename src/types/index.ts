@@ -39,7 +39,6 @@ export interface HeatmapConfig {
   dimension: 'industry' | 'concept' | 'stock' | 'watchlist';
   colorField: 'changePercent' | 'change' | 'volumeRatio' | 'turnoverRate';
   sizeField: 'totalMarketCap' | 'amount' | 'volume';
-  colorMode: 'red-rise' | 'green-rise';
   topK: number;
 }
 

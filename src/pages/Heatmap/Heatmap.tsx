@@ -2,12 +2,12 @@
  * 热力图页面
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Grid3X3, Building2, Lightbulb, Star } from 'lucide-react';
 import { Tabs, Loading } from '@/components/common';
-import { usePolling } from '@/hooks';
+import { usePolling, useTheme } from '@/hooks';
 import { useBoardData, useAppSettings } from '@/contexts';
 import { getAllQuotesByCodes, getIndustryConstituents } from '@/services/sdk';
 import { getAllWatchlistCodes } from '@/services/storage';
@@ -15,6 +15,7 @@ import { formatPercent, formatAmount } from '@/utils/format';
 import type { FullQuote } from 'stock-sdk';
 import type { HeatmapConfig } from '@/types';
 import { LazyEChart } from '@/components/charts/LazyEChart';
+import { getChartColors, withAlpha, type ChartColors } from '@/components/charts/chartTheme';
 import styles from './Heatmap.module.css';
 
 // 维度选项
@@ -45,14 +46,73 @@ const TOP_K_OPTIONS = [
   { key: '200', label: 'Top 200' },
 ];
 
+interface HeatmapItem {
+  changePercent?: number | null;
+  turnoverRate?: number | null;
+  volumeRatio?: number | null;
+  totalMarketCap?: number | null;
+  amount?: number | null;
+}
+
+// 获取颜色值（根据 colorField 配置）
+function getColorValue(item: HeatmapItem, field: HeatmapConfig['colorField']) {
+  switch (field) {
+    case 'turnoverRate':
+      return item.turnoverRate ?? 0;
+    case 'volumeRatio':
+      return item.volumeRatio ?? 1;
+    case 'changePercent':
+    default:
+      return item.changePercent ?? 0;
+  }
+}
+
+// 获取大小值（根据 sizeField 配置）
+function getSizeValue(item: HeatmapItem, field: HeatmapConfig['sizeField']) {
+  switch (field) {
+    case 'amount':
+      return item.amount ?? 1;
+    case 'totalMarketCap':
+    default:
+      return item.totalMarketCap ?? 1;
+  }
+}
+
+// 根据值获取颜色
+function getTileColor(
+  value: number,
+  field: HeatmapConfig['colorField'],
+  colors: ChartColors,
+  minAlpha: number
+) {
+  const alphaFor = (intensity: number) => minAlpha + intensity * (1 - minAlpha);
+
+  // 对于涨跌幅，正负值有不同颜色
+  if (field === 'changePercent') {
+    if (value === 0) return colors.flat;
+    const intensity = Math.min(Math.abs(value) / 10, 1);
+    return withAlpha(value > 0 ? colors.rise : colors.fall, alphaFor(intensity));
+  }
+
+  // 对于换手率和量比，只使用单色渐变（值越大颜色越深）
+  const maxValue = field === 'turnoverRate' ? 20 : 5; // 换手率最大20%，量比最大5
+  return withAlpha(colors.rise, alphaFor(Math.min(value / maxValue, 1)));
+}
+
 export function Heatmap() {
   const navigate = useNavigate();
   const { settings, updateSettings, getRefreshInterval } = useAppSettings();
+  const { theme } = useTheme();
 
   // 使用共享的板块数据（优化：避免重复请求）
   const { industryList, conceptList, loading: boardLoading } = useBoardData();
 
   const config = settings.heatmapConfig;
+  const colorMode = settings.colorMode;
+
+  // tooltip 与瓦片同一套涨跌配色，跟随 colorMode
+  const chartColors = useMemo(() => getChartColors(theme, colorMode), [theme, colorMode]);
+  const minAlpha = theme === 'light' ? 0.55 : 0.3;
 
   // 个股数据状态
   const [stockQuotes, setStockQuotes] = useState<FullQuote[]>([]);
@@ -83,7 +143,7 @@ export function Heatmap() {
       } else {
         // 个股模式：从行业板块的成分股中获取
         const allStocks: FullQuote[] = [];
-        
+
         // 获取前3个行业的成分股
         const topIndustries = industryList.slice(0, 3);
         for (const industry of topIndustries) {
@@ -98,12 +158,12 @@ export function Heatmap() {
             console.error(`Failed to fetch constituents for ${industry.code}`);
           }
         }
-        
+
         // 去重并限制数量
         const uniqueStocks = Array.from(
           new Map(allStocks.map((s) => [s.code, s])).values()
         ).slice(0, config.topK);
-        
+
         setStockQuotes(uniqueStocks);
       }
     } catch (error) {
@@ -111,18 +171,24 @@ export function Heatmap() {
     }
   }, [config.dimension, config.topK, industryList]);
 
-  // 维度变化时加载个股数据
-  useEffect(() => {
-    if (config.dimension === 'stock' || config.dimension === 'watchlist') {
-      fetchStockData();
-    }
-  }, [config.dimension, fetchStockData]);
+  const isStockDimension = config.dimension === 'stock' || config.dimension === 'watchlist';
 
   // 轮询个股数据（板块数据由全局 Context 管理，无需轮询）
-  usePolling(fetchStockData, {
+  const { refresh: refreshStockData } = usePolling(fetchStockData, {
     interval: getRefreshInterval('heatmap'),
-    enabled: !boardLoading && (config.dimension === 'stock' || config.dimension === 'watchlist'),
+    enabled: !boardLoading && isStockDimension,
   });
+
+  const topKInitRef = useRef(false);
+  useEffect(() => {
+    if (!topKInitRef.current) {
+      topKInitRef.current = true;
+      return;
+    }
+    if (isStockDimension) {
+      refreshStockData();
+    }
+  }, [config.topK, isStockDimension, refreshStockData]);
 
   // 兼容旧逻辑的 loading 状态
   const loading = boardLoading;
@@ -144,167 +210,119 @@ export function Heatmap() {
       ? 'totalMarketCap'
       : config.sizeField;
 
-  // tooltip 与瓦片同一套涨跌配色，跟随 colorMode
-  const isRiseRed = config.colorMode === 'red-rise';
-  const riseHex = isRiseRed ? '#ef4444' : '#22c55e';
-  const fallHex = isRiseRed ? '#22c55e' : '#ef4444';
-
-  // 获取颜色值（根据 colorField 配置）
-  const getColorValue = (item: { changePercent?: number | null; turnoverRate?: number | null; volumeRatio?: number | null }) => {
-    switch (effectiveColorField) {
-      case 'turnoverRate':
-        return item.turnoverRate ?? 0;
-      case 'volumeRatio':
-        return item.volumeRatio ?? 1;
-      case 'changePercent':
-      default:
-        return item.changePercent ?? 0;
-    }
-  };
-
-  // 获取大小值（根据 sizeField 配置）
-  const getSizeValue = (item: { totalMarketCap?: number | null; amount?: number | null }) => {
-    switch (effectiveSizeField) {
-      case 'amount':
-        return item.amount ?? 1;
-      case 'totalMarketCap':
-      default:
-        return item.totalMarketCap ?? 1;
-    }
-  };
-
-  // 根据值获取颜色
-  const getColor = (value: number, field: string = 'changePercent') => {
-    if (value === null || value === undefined) return '#6e7681';
-    
-    const isRiseRed = config.colorMode === 'red-rise';
-    
-    // 对于涨跌幅，正负值有不同颜色
-    if (field === 'changePercent') {
-      if (value === 0) return '#6e7681';
-      if (value > 0) {
-        const intensity = Math.min(value / 10, 1);
-        return `rgba(${isRiseRed ? '239, 68, 68' : '34, 197, 94'}, ${0.3 + intensity * 0.7})`;
-      } else {
-        const intensity = Math.min(Math.abs(value) / 10, 1);
-        return `rgba(${isRiseRed ? '34, 197, 94' : '239, 68, 68'}, ${0.3 + intensity * 0.7})`;
-      }
-    }
-    
-    // 对于换手率和量比，只使用单色渐变（值越大颜色越深）
-    const maxValue = field === 'turnoverRate' ? 20 : 5; // 换手率最大20%，量比最大5
-    const intensity = Math.min(value / maxValue, 1);
-    return `rgba(${isRiseRed ? '239, 68, 68' : '34, 197, 94'}, ${0.3 + intensity * 0.7})`;
-  };
-
   // 构建 Treemap 数据
   const treemapData = useMemo(() => {
+    const tileColor = (item: HeatmapItem) =>
+      getTileColor(getColorValue(item, effectiveColorField), effectiveColorField, chartColors, minAlpha);
+
     if (config.dimension === 'industry') {
-      return industryList.map((item) => {
-        const colorValue = getColorValue(item);
-        return {
-          name: item.name || '未知',
-          value: getSizeValue(item),
-          code: item.code,
-          changePercent: item.changePercent,
-          turnoverRate: item.turnoverRate,
-          riseCount: item.riseCount,
-          fallCount: item.fallCount,
-          leadingStock: item.leadingStock,
-          leadingStockChangePercent: item.leadingStockChangePercent,
-          itemStyle: {
-            color: getColor(colorValue, effectiveColorField),
-          },
-        };
-      });
+      return industryList.map((item) => ({
+        name: item.name || '未知',
+        value: getSizeValue(item, effectiveSizeField),
+        code: item.code,
+        changePercent: item.changePercent,
+        turnoverRate: item.turnoverRate,
+        riseCount: item.riseCount,
+        fallCount: item.fallCount,
+        leadingStock: item.leadingStock,
+        leadingStockChangePercent: item.leadingStockChangePercent,
+        itemStyle: {
+          color: tileColor(item),
+        },
+      }));
     }
 
     if (config.dimension === 'concept') {
-      return conceptList.map((item) => {
-        const colorValue = getColorValue(item);
-        return {
-          name: item.name || '未知',
-          value: getSizeValue(item),
-          code: item.code,
-          changePercent: item.changePercent,
-          turnoverRate: item.turnoverRate,
-          riseCount: item.riseCount,
-          fallCount: item.fallCount,
-          leadingStock: item.leadingStock,
-          leadingStockChangePercent: item.leadingStockChangePercent,
-          itemStyle: {
-            color: getColor(colorValue, effectiveColorField),
-          },
-        };
-      });
+      return conceptList.map((item) => ({
+        name: item.name || '未知',
+        value: getSizeValue(item, effectiveSizeField),
+        code: item.code,
+        changePercent: item.changePercent,
+        turnoverRate: item.turnoverRate,
+        riseCount: item.riseCount,
+        fallCount: item.fallCount,
+        leadingStock: item.leadingStock,
+        leadingStockChangePercent: item.leadingStockChangePercent,
+        itemStyle: {
+          color: tileColor(item),
+        },
+      }));
     }
 
     if (config.dimension === 'stock' || config.dimension === 'watchlist') {
-      return stockQuotes.map((item) => {
-        const colorValue = getColorValue(item);
-        return {
-          name: item.name || '未知',
-          value: getSizeValue(item),
-          code: item.code,
-          changePercent: item.changePercent,
-          price: item.price,
-          amount: item.amount,
-          turnoverRate: item.turnoverRate,
-          itemStyle: {
-            color: getColor(colorValue, effectiveColorField),
-          },
-        };
-      });
+      return stockQuotes.map((item) => ({
+        name: item.name || '未知',
+        value: getSizeValue(item, effectiveSizeField),
+        code: item.code,
+        changePercent: item.changePercent,
+        price: item.price,
+        amount: item.amount,
+        turnoverRate: item.turnoverRate,
+        itemStyle: {
+          color: tileColor(item),
+        },
+      }));
     }
 
     return [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.dimension, config.colorField, config.sizeField, industryList, conceptList, stockQuotes, config.colorMode]);
+  }, [
+    config.dimension,
+    industryList,
+    conceptList,
+    stockQuotes,
+    effectiveColorField,
+    effectiveSizeField,
+    chartColors,
+    minAlpha,
+  ]);
 
   // Treemap 配置
   const chartOption = useMemo(() => {
+    const { rise, fall, flat, bgElevated, bgCard, borderPrimary, textPrimary, textTertiary, accent } =
+      chartColors;
+
     return {
       backgroundColor: 'transparent',
       tooltip: {
-        backgroundColor: 'rgba(28, 33, 40, 0.96)',
-        borderColor: '#30363d',
+        backgroundColor: bgElevated,
+        borderColor: borderPrimary,
         borderWidth: 1,
         padding: [10, 14],
-        textStyle: { color: '#e6edf3', fontSize: 12 },
-        extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.4); border-radius: 8px;',
+        textStyle: { color: textPrimary, fontSize: 12 },
+        extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.25); border-radius: 8px;',
         formatter: (params: { data: Record<string, unknown> }) => {
           const data = params.data;
           if (!data || !data.name) return '';
-          
-          let content = `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#fff;">${data.name}</div>`;
-          
+
+          let content = `<div style="font-weight:600;font-size:13px;margin-bottom:6px;color:${textPrimary};">${data.name}</div>`;
+
           if (data.changePercent !== undefined && data.changePercent !== null) {
             const changePercent = data.changePercent as number;
-            const color = changePercent > 0 ? riseHex : changePercent < 0 ? fallHex : '#8b949e';
-            content += `<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:#8b949e">涨跌幅</span><span style="color:${color};font-weight:500">${formatPercent(changePercent)}</span></div>`;
+            const color = changePercent > 0 ? rise : changePercent < 0 ? fall : flat;
+            content += `<div style="display:flex;justify-content:space-between;gap:16px;"><span style="color:${textTertiary}">涨跌幅</span><span style="color:${color};font-weight:500">${formatPercent(changePercent)}</span></div>`;
           }
-          
+
           if (data.turnoverRate !== undefined && data.turnoverRate !== null) {
-            content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:#8b949e">换手率</span><span>${(data.turnoverRate as number).toFixed(2)}%</span></div>`;
+            content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:${textTertiary}">换手率</span><span>${(data.turnoverRate as number).toFixed(2)}%</span></div>`;
           }
-          
+
           if (data.leadingStock) {
             const leadingChange = data.leadingStockChangePercent as number | null;
-            const leadingColor = leadingChange != null && leadingChange > 0 ? riseHex : leadingChange != null && leadingChange < 0 ? fallHex : '#8b949e';
-            content += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #30363d;"><span style="color:#6e7681;font-size:11px">领涨</span><div style="margin-top:2px;display:flex;justify-content:space-between;"><span>${data.leadingStock}</span><span style="color:${leadingColor}">${leadingChange != null ? formatPercent(leadingChange) : ''}</span></div></div>`;
+            const leadingColor = leadingChange != null && leadingChange > 0 ? rise : leadingChange != null && leadingChange < 0 ? fall : flat;
+            content += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid ${borderPrimary};"><span style="color:${textTertiary};font-size:11px">领涨</span><div style="margin-top:2px;display:flex;justify-content:space-between;"><span>${data.leadingStock}</span><span style="color:${leadingColor}">${leadingChange != null ? formatPercent(leadingChange) : ''}</span></div></div>`;
           }
-          
+
           if (data.riseCount !== undefined && data.riseCount !== null) {
-            content += `<div style="margin-top:6px;font-size:11px;color:#6e7681"><span style="color:${riseHex}">${data.riseCount}↑</span> <span style="color:${fallHex}">${data.fallCount ?? 0}↓</span></div>`;
+            content += `<div style="margin-top:6px;font-size:11px;color:${textTertiary}"><span style="color:${rise}">${data.riseCount}↑</span> <span style="color:${fall}">${data.fallCount ?? 0}↓</span></div>`;
           }
-          
+
           if (data.price !== undefined && data.price !== null) {
-            content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:#8b949e">现价</span><span>${(data.price as number).toFixed(2)}</span></div>`;
+            content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:${textTertiary}">现价</span><span>${(data.price as number).toFixed(2)}</span></div>`;
             if (data.amount !== undefined && data.amount !== null) {
-              content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:#8b949e">成交额</span><span>${formatAmount(data.amount as number)}</span></div>`;
+              content += `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;"><span style="color:${textTertiary}">成交额</span><span>${formatAmount(data.amount as number)}</span></div>`;
             }
           }
-          
+
           return content;
         },
       },
@@ -345,13 +363,13 @@ export function Heatmap() {
             },
           },
           itemStyle: {
-            borderColor: '#0d1117',
+            borderColor: bgCard,
             borderWidth: 1,
             gapWidth: 1,
           },
           emphasis: {
             itemStyle: {
-              borderColor: '#58a6ff',
+              borderColor: accent,
               borderWidth: 2,
             },
             label: {
@@ -361,7 +379,7 @@ export function Heatmap() {
           levels: [
             {
               itemStyle: {
-                borderColor: '#0d1117',
+                borderColor: bgCard,
                 borderWidth: 1,
                 gapWidth: 1,
               },
@@ -371,7 +389,7 @@ export function Heatmap() {
         },
       ],
     };
-  }, [treemapData, riseHex, fallHex]);
+  }, [treemapData, chartColors]);
 
   // 点击处理
   const handleChartClick = (params: { data?: { code?: string } }) => {
@@ -431,10 +449,10 @@ export function Heatmap() {
 
         <div className={styles.controlGroup}>
           <button
-            className={`${styles.colorModeBtn} ${config.colorMode === 'red-rise' ? styles.active : ''}`}
-            onClick={() => updateConfig({ colorMode: config.colorMode === 'red-rise' ? 'green-rise' : 'red-rise' })}
+            className={`${styles.colorModeBtn} ${colorMode === 'red-rise' ? styles.active : ''}`}
+            onClick={() => updateSettings({ colorMode: colorMode === 'red-rise' ? 'green-rise' : 'red-rise' })}
           >
-            {config.colorMode === 'red-rise' ? '红涨绿跌' : '绿涨红跌'}
+            {colorMode === 'red-rise' ? '红涨绿跌' : '绿涨红跌'}
           </button>
         </div>
 
@@ -471,13 +489,9 @@ export function Heatmap() {
       {/* 图例 */}
       <div className={styles.legend}>
         <div className={styles.legendBar}>
-          <span className={styles.legendLabel}>
-            {config.colorMode === 'red-rise' ? '跌' : '涨'}
-          </span>
+          <span className={styles.legendLabel}>跌</span>
           <div className={styles.legendGradient} />
-          <span className={styles.legendLabel}>
-            {config.colorMode === 'red-rise' ? '涨' : '跌'}
-          </span>
+          <span className={styles.legendLabel}>涨</span>
         </div>
       </div>
     </div>
