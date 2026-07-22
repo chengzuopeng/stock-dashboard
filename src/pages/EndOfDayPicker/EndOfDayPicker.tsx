@@ -319,7 +319,7 @@ function StockCard({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
         duration: 0.4,
-        delay: index * 0.05,
+        delay: Math.min(index, 12) * 0.05,
         ease: 'easeOut',
       }}
       whileHover={{
@@ -345,7 +345,7 @@ function StockCard({
           className={styles.changeBadge}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ delay: index * 0.05 + 0.2, type: 'spring' }}
+          transition={{ delay: Math.min(index, 12) * 0.05 + 0.2, type: 'spring' }}
         >
           <span className={styles.changeIcon}>{isPositive ? '▲' : '▼'}</span>
           <span className={styles.changePercent}>{formatNumber(stock.changePercent)}%</span>
@@ -917,8 +917,8 @@ export function EndOfDayPicker() {
                               onClick={() => handleLoadRecent(recent)}
                             >
                               <span className={styles.recentSummary}>
-                                市值 {recent.filters.marketCapMin}-{recent.filters.marketCapMax}亿 · 
-                                涨幅 {recent.filters.changePercentMin}-{recent.filters.changePercentMax}%
+                                市值 {recent.filters.marketCapMin} ~ {recent.filters.marketCapMax ?? '不限'}亿 · 
+                                涨幅 {recent.filters.changePercentMin} ~ {recent.filters.changePercentMax ?? '不限'}%
                               </span>
                               <span className={styles.recentTime}>
                                 {new Date(recent.usedAt).toLocaleString('zh-CN', {
@@ -1091,20 +1091,14 @@ export function EndOfDayPicker() {
                     <div className={styles.filterValue}>
                       {isEditing ? (
                         <>
-                          <input
-                            type="number"
+                          <NumberField
                             value={filters.timelineAboveAvgRatio}
-                            onChange={(e) =>
-                              handleFilterChange(
-                                'timelineAboveAvgRatio',
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
+                            min={0}
+                            max={100}
+                            step="5"
+                            onCommit={(v) => handleFilterChange('timelineAboveAvgRatio', v ?? 0)}
                             className={styles.filterInput}
                             onClick={(e) => e.stopPropagation()}
-                            step="5"
-                            min="0"
-                            max="100"
                           />
                           <span className={styles.filterUnit}>%</span>
                         </>

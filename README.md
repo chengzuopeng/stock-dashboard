@@ -7,7 +7,6 @@
 ## 数据来源：stock-sdk
 项目的所有行情与数据接口由 [stock-sdk](https://stock-sdk.linkdiary.cn/) 提供。
 - 接入层：`src/services/sdk.ts`，封装缓存、重试与统一调用
-- 参考文档：`sdk.md`
 - 使用范围：实时行情、分时、板块/行业、选股与详情页数据
 
 ## 功能亮点
@@ -24,8 +23,10 @@
 - 榜单：`/rankings` - 涨跌榜、成交榜等
 - 板块：`/boards` - 行业/概念板块列表与详情
 - 自选：`/watchlist` - 分组管理与行情列表
+- 扫描：`/scanner` - 多来源股票池的技术信号扫描
 - 尾盘选股：`/eod-picker` - 条件筛选与分时趋势
 - 个股详情：`/s/:code` - 价格、K 线、资金等
+- 设置：`/settings` - 刷新频率、涨跌颜色、指标参数
 
 ## 数据与缓存策略
 - SDK 请求统一走 `src/services/sdk.ts`

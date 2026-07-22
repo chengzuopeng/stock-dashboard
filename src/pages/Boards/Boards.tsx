@@ -88,7 +88,7 @@ export function Boards() {
                 className={styles.boardCard}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.02 }}
+                transition={{ delay: Math.min(index, 20) * 0.02 }}
                 onClick={() => handleBoardClick(item.code)}
               >
                 <div className={styles.boardHeader}>
