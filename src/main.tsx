@@ -17,7 +17,8 @@ if (import.meta.env.PROD) {
     url: 'https://faro-collector-prod-ap-southeast-1.grafana.net/collect/d730ce3555958ea089459acd1cd6886b',
     app: {
       name: 'stock-dashboard',
-      version: '1.0.0',
+      version: __APP_VERSION__,
+      release: __APP_COMMIT__,
       environment: 'production',
     },
 
