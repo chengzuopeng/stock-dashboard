@@ -774,29 +774,18 @@ export function StockDetail() {
   const fundRefreshInterval = Math.max(detailRefreshInterval * 6, 30000);
 
   // 每个 alertType 只预填一次：quote 随轮询高频更新，无守卫会持续覆写用户正在输入的阈值
-  const prefilledAlertTypeRef = useRef<AlertType | null>(null);
+  const [prefilledAlertType, setPrefilledAlertType] = useState<AlertType | null>(null);
 
-  useEffect(() => {
-    if (!quote || prefilledAlertTypeRef.current === alertType) {
-      return;
-    }
-    prefilledAlertTypeRef.current = alertType;
-
-    switch (alertType) {
-      case 'change_percent_gte':
-      case 'change_percent_lte':
-        setAlertValue(String(quote.changePercent.toFixed(2)));
-        break;
-      case 'amount_gte':
-        setAlertValue(String(Math.max(quote.amount, 1).toFixed(2)));
-        break;
-      case 'price_gte':
-      case 'price_lte':
-      default:
-        setAlertValue(String(quote.price.toFixed(2)));
-        break;
-    }
-  }, [alertType, quote]);
+  if (quote && prefilledAlertType !== alertType) {
+    setPrefilledAlertType(alertType);
+    setAlertValue(
+      alertType === 'change_percent_gte' || alertType === 'change_percent_lte'
+        ? quote.changePercent.toFixed(2)
+        : alertType === 'amount_gte'
+          ? Math.max(quote.amount, 1).toFixed(2)
+          : quote.price.toFixed(2)
+    );
+  }
 
   const fetchQuote = useCallback(async () => {
     if (!normalizedCode) {
