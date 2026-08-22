@@ -3,7 +3,6 @@
  */
 
 import type { ReactNode, CSSProperties } from 'react';
-import { motion } from 'framer-motion';
 import styles from './Card.module.css';
 
 interface CardProps {
@@ -25,20 +24,10 @@ export function Card({
   style,
   animate = true,
 }: CardProps) {
-  const Wrapper = animate ? motion.div : 'div';
-  const animateProps = animate
-    ? {
-        initial: { opacity: 0, y: 12 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.25 },
-      }
-    : {};
-
   return (
-    <Wrapper
-      className={`${styles.card} ${styles[`padding-${padding}`]} ${className}`}
+    <div
+      className={`${styles.card} ${styles[`padding-${padding}`]} ${animate ? styles.enter : ''} ${className}`}
       style={style}
-      {...animateProps}
     >
       {(title || extra) && (
         <div className={styles.header}>
@@ -47,6 +36,6 @@ export function Card({
         </div>
       )}
       <div className={styles.body}>{children}</div>
-    </Wrapper>
+    </div>
   );
 }

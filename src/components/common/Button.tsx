@@ -3,7 +3,6 @@
  */
 
 import type { ReactNode, MouseEventHandler } from 'react';
-import { motion } from 'framer-motion';
 import styles from './Button.module.css';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -35,12 +34,10 @@ export function Button({
   onClick,
 }: ButtonProps) {
   return (
-    <motion.button
+    <button
       type={type}
       className={`${styles.button} ${styles[variant]} ${styles[size]} ${block ? styles.block : ''} ${className}`}
       disabled={disabled || loading}
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
-      whileTap={{ scale: disabled ? 1 : 0.98 }}
       onClick={onClick}
     >
       {loading ? (
@@ -49,6 +46,6 @@ export function Button({
         <span className={styles.icon}>{icon}</span>
       ) : null}
       {children && <span className={styles.text}>{children}</span>}
-    </motion.button>
+    </button>
   );
 }

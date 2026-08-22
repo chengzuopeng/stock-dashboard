@@ -3,7 +3,6 @@
  */
 
 import { NavLink, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   Grid3X3,
@@ -51,13 +50,7 @@ export function Sidebar() {
         to={item.path}
         className={`${styles.navItem} ${isActive ? styles.active : ''}`}
       >
-        {isActive && (
-          <motion.div
-            className={styles.activeIndicator}
-            layoutId="activeIndicator"
-            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-          />
-        )}
+        {isActive && <span className={styles.activeIndicator} />}
         <span className={styles.icon}>{item.icon}</span>
         <span className={styles.label}>{item.label}</span>
       </NavLink>

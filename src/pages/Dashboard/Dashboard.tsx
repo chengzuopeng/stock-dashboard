@@ -4,7 +4,6 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Card, Tabs, Loading, Empty, Button } from '@/components/common';
 import { useAllWatchlistCodes, usePolling } from '@/hooks';
@@ -251,12 +250,10 @@ export function Dashboard() {
       {/* 指数卡片 */}
       <section className={styles.indices}>
         {indices.map((item, index) => (
-          <motion.div
+          <div
             key={item.code}
             className={styles.indexCard}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
+            style={{ animationDelay: `${index * 50}ms` }}
             onClick={() => handleStockClick(item.code)}
           >
             <div className={styles.indexName}>{item.name}</div>
@@ -275,7 +272,7 @@ export function Dashboard() {
             <div className={styles.indexAmount}>
               成交 {formatAmount(item.amount)}
             </div>
-          </motion.div>
+          </div>
         ))}
       </section>
 
@@ -517,12 +514,10 @@ export function Dashboard() {
           >
             <div className={styles.boardList}>
               {currentBoards.slice(0, 15).map((item, index) => (
-                <motion.div
+                <div
                   key={item.code}
                   className={styles.boardItem}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
+                  style={{ animationDelay: `${index * 30}ms` }}
                   onClick={() => handleBoardClick(item.code, boardTab)}
                 >
                   <div className={styles.boardLeft}>
@@ -546,7 +541,7 @@ export function Dashboard() {
                       <span className="text-fall">{item.fallCount}↓</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Card>
@@ -567,12 +562,10 @@ export function Dashboard() {
           >
             <div className={styles.boardList}>
               {currentFundFlowBoards.slice(0, 12).map((item, index) => (
-                <motion.div
+                <div
                   key={`${item.code}-flow`}
                   className={styles.boardItem}
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
+                  style={{ animationDelay: `${index * 30}ms` }}
                   onClick={() => handleBoardClick(item.code, boardTab)}
                 >
                   <div className={styles.boardLeft}>
@@ -602,7 +595,7 @@ export function Dashboard() {
                       </span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </Card>

@@ -3,7 +3,6 @@
  */
 
 import { useState, useCallback, useMemo, type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { ToastContext, type ToastType, type ToastContextValue } from './toastContext';
 import styles from './Toast.module.css';
@@ -60,27 +59,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div className={styles.container}>
-        <AnimatePresence>
-          {toasts.map((toast) => (
-            <motion.div
-              key={toast.id}
-              className={`${styles.toast} ${styles[toast.type]}`}
-              initial={{ opacity: 0, y: -20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.9 }}
-              transition={{ duration: 0.2 }}
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`${styles.toast} ${styles[toast.type]}`}>
+            <span className={styles.icon}>{getIcon(toast.type)}</span>
+            <span className={styles.message}>{toast.message}</span>
+            <button
+              className={styles.closeBtn}
+              onClick={() => removeToast(toast.id)}
             >
-              <span className={styles.icon}>{getIcon(toast.type)}</span>
-              <span className={styles.message}>{toast.message}</span>
-              <button
-                className={styles.closeBtn}
-                onClick={() => removeToast(toast.id)}
-              >
-                <X size={14} />
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <X size={14} />
+            </button>
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
   );

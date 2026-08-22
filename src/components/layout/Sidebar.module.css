@@ -87,6 +87,16 @@
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   z-index: -1;
+  animation: indicatorIn 0.15s ease backwards;
+}
+
+@keyframes indicatorIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .icon {

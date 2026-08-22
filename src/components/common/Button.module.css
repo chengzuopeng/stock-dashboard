@@ -14,7 +14,8 @@
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
-    border-color var(--transition-fast);
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -22,6 +23,14 @@
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.button:not(:disabled):hover {
+  transform: scale(1.02);
+}
+
+.button:not(:disabled):active {
+  transform: scale(0.98);
 }
 
 /* 尺寸 */

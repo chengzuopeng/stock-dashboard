@@ -17,9 +17,6 @@ importers:
       '@grafana/faro-web-sdk':
         specifier: ^2.1.0
         version: 2.1.0
-      '@grafana/faro-web-tracing':
-        specifier: ^2.1.0
-        version: 2.1.0
       echarts:
         specifier: ^6.0.0
         version: 6.0.0

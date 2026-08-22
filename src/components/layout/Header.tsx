@@ -4,7 +4,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   X,
@@ -253,84 +252,76 @@ export function Header() {
           {isLoading && <RefreshCw size={14} className={styles.loadingIcon} />}
         </div>
 
-        <AnimatePresence>
-          {showDropdown && (
-            <motion.div
-              className={styles.dropdown}
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.15 }}
-            >
-              {keyword ? (
-                // 搜索结果
-                <div className={styles.resultList}>
-                  {results.map((item, index) => (
-                    <div
-                      key={item.code}
-                      className={`${styles.resultItem} ${
-                        !item.isSupported ? styles.unsupported : ''
-                      } ${
-                        index === activeIndex ? styles.active : ''
-                      }`}
-                      onClick={() => handleSelect(item)}
-                    >
-                      <span className={styles.typeIcon}>
-                        {getTypeIcon(item.type)}
-                      </span>
-                      <span className={styles.itemName}>{item.name}</span>
-                      <span className={styles.itemCode}>{item.code}</span>
-                      <span className={styles.itemType}>
-                        {item.isSupported ? item.typeLabel : '暂不支持'}
-                      </span>
-                      {/* 股票类型显示快速加自选按钮 */}
-                      {item.entityType === 'stock' && item.isSupported && (
-                        <button
-                          className={`${styles.quickAddBtn} ${checkIsInWatchlist(item.code) ? styles.added : ''}`}
-                          onClick={(e) => handleQuickAdd(e, item)}
-                          title={checkIsInWatchlist(item.code) ? '已在自选' : '加入自选'}
-                        >
-                          {checkIsInWatchlist(item.code) ? <Check size={14} /> : <Star size={14} />}
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                // 搜索历史
-                <div className={styles.historyList}>
-                  <div className={styles.historyHeader}>
-                    <span className={styles.historyTitle}>
-                      <Clock size={12} />
-                      最近搜索
+        {showDropdown && (
+          <div className={styles.dropdown}>
+            {keyword ? (
+              // 搜索结果
+              <div className={styles.resultList}>
+                {results.map((item, index) => (
+                  <div
+                    key={item.code}
+                    className={`${styles.resultItem} ${
+                      !item.isSupported ? styles.unsupported : ''
+                    } ${
+                      index === activeIndex ? styles.active : ''
+                    }`}
+                    onClick={() => handleSelect(item)}
+                  >
+                    <span className={styles.typeIcon}>
+                      {getTypeIcon(item.type)}
                     </span>
-                    <button
-                      className={styles.clearHistoryBtn}
-                      onClick={handleClearHistory}
-                    >
-                      清除
-                    </button>
+                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemCode}>{item.code}</span>
+                    <span className={styles.itemType}>
+                      {item.isSupported ? item.typeLabel : '暂不支持'}
+                    </span>
+                    {/* 股票类型显示快速加自选按钮 */}
+                    {item.entityType === 'stock' && item.isSupported && (
+                      <button
+                        className={`${styles.quickAddBtn} ${checkIsInWatchlist(item.code) ? styles.added : ''}`}
+                        onClick={(e) => handleQuickAdd(e, item)}
+                        title={checkIsInWatchlist(item.code) ? '已在自选' : '加入自选'}
+                      >
+                        {checkIsInWatchlist(item.code) ? <Check size={14} /> : <Star size={14} />}
+                      </button>
+                    )}
                   </div>
-                  {history.map((item, index) => (
-                    <div
-                      key={item.code}
-                      className={`${styles.resultItem} ${
-                        index === activeIndex ? styles.active : ''
-                      }`}
-                      onClick={() => handleSelectHistory(item)}
-                    >
-                      <span className={styles.typeIcon}>
-                        {getTypeIcon(item.type)}
-                      </span>
-                      <span className={styles.itemName}>{item.name}</span>
-                      <span className={styles.itemCode}>{item.code}</span>
-                    </div>
-                  ))}
+                ))}
+              </div>
+            ) : (
+              // 搜索历史
+              <div className={styles.historyList}>
+                <div className={styles.historyHeader}>
+                  <span className={styles.historyTitle}>
+                    <Clock size={12} />
+                    最近搜索
+                  </span>
+                  <button
+                    className={styles.clearHistoryBtn}
+                    onClick={handleClearHistory}
+                  >
+                    清除
+                  </button>
                 </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {history.map((item, index) => (
+                  <div
+                    key={item.code}
+                    className={`${styles.resultItem} ${
+                      index === activeIndex ? styles.active : ''
+                    }`}
+                    onClick={() => handleSelectHistory(item)}
+                  >
+                    <span className={styles.typeIcon}>
+                      {getTypeIcon(item.type)}
+                    </span>
+                    <span className={styles.itemName}>{item.name}</span>
+                    <span className={styles.itemCode}>{item.code}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.right}>

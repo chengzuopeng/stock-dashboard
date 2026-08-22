@@ -8,6 +8,19 @@ import path from 'path'
 
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, 'package.json'), 'utf8')) as { version: string }
 
+const VENDOR_CHUNKS: Record<string, string> = {
+  react: 'react-vendor',
+  'react-dom': 'react-vendor',
+  scheduler: 'react-vendor',
+  'react-router': 'react-vendor',
+  'react-router-dom': 'react-vendor',
+  echarts: 'echarts-vendor',
+  zrender: 'echarts-vendor',
+  'framer-motion': 'motion-vendor',
+  'motion-dom': 'motion-vendor',
+  'motion-utils': 'motion-vendor',
+}
+
 function resolveCommit(): string {
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7)
   try {
@@ -65,29 +78,8 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (!id.includes('node_modules')) {
-              return;
-            }
-
-            if (id.includes('echarts-for-react')) {
-              return;
-            }
-
-            if (id.includes('/echarts/') || id.includes('/zrender/')) {
-              return 'echarts-vendor';
-            }
-
-            if (id.includes('framer-motion')) {
-              return 'motion-vendor';
-            }
-
-            if (
-              id.includes('react') ||
-              id.includes('react-dom') ||
-              id.includes('react-router')
-            ) {
-              return 'react-vendor';
-            }
+            const match = id.match(/.*node_modules\/((?:@[^/]+\/)?[^/]+)\//)
+            return match ? VENDOR_CHUNKS[match[1]] : undefined
           },
         },
       },
