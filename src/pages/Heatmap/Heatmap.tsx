@@ -10,7 +10,7 @@ import { Tabs, Loading } from '@/components/common';
 import { usePolling, useTheme } from '@/hooks';
 import { useBoardData, useAppSettings } from '@/contexts';
 import { getAllQuotesByCodes, getIndustryConstituents } from '@/services/sdk';
-import { getAllWatchlistCodes } from '@/services/storage';
+import { selectAllCodes, watchlistStore } from '@/services/watchlistStore';
 import { formatPercent, formatAmount } from '@/utils/format';
 import type { FullQuote } from 'stock-sdk';
 import type { HeatmapConfig } from '@/types';
@@ -133,7 +133,7 @@ export function Heatmap() {
 
     try {
       if (config.dimension === 'watchlist') {
-        const codes = getAllWatchlistCodes();
+        const codes = selectAllCodes(watchlistStore.getSnapshot());
         if (codes.length > 0) {
           const quotes = await getAllQuotesByCodes(codes.slice(0, config.topK));
           setStockQuotes(quotes);

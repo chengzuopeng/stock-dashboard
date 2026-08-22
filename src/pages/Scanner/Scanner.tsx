@@ -15,11 +15,8 @@ import {
   type ScannerStockPoolItem,
   scanSignalPool,
 } from '@/services/analysis';
-import {
-  addToWatchlist,
-  getAllWatchlistCodes,
-  isInWatchlist,
-} from '@/services/storage';
+import { selectAllCodes, watchlistActions, watchlistStore } from '@/services/watchlistStore';
+import { useIsInWatchlist } from '@/hooks';
 import {
   getAllAShareQuotes,
   getAllQuotesByCodes,
@@ -92,7 +89,6 @@ interface ScanResultRow {
   name: string;
   signal: string;
   time: string;
-  added: boolean;
 }
 
 function formatProgress(progress: AnalysisProgress) {
@@ -200,7 +196,7 @@ export function Scanner() {
   }, [boardLimit, boardType, selectedBoardCode, toast]);
 
   const resolveWatchlistPool = useCallback(async (): Promise<ScannerStockPoolItem[]> => {
-    const routeCodes = getAllWatchlistCodes()
+    const routeCodes = selectAllCodes(watchlistStore.getSnapshot())
       .map((code) => normalizeStockCode(code))
       .filter(Boolean);
 
@@ -321,7 +317,6 @@ export function Scanner() {
             name: result.name,
             signal: result.matchedSignals.join(' / '),
             time: now,
-            added: isInWatchlist(result.routeCode),
           });
           setResults([...buffered]);
         },
@@ -334,7 +329,6 @@ export function Scanner() {
           name: item.name,
           signal: item.matchedSignals.join(' / '),
           time: now,
-          added: isInWatchlist(item.routeCode),
         }))
       );
     } catch (error) {
@@ -361,14 +355,11 @@ export function Scanner() {
     [navigate]
   );
 
+  const isInWatchlist = useIsInWatchlist();
+
   const handleAddWatchlist = useCallback(
-    (routeCode: string, name: string, index: number) => {
-      addToWatchlist(routeCode);
-      setResults((prev) =>
-        prev.map((item, itemIndex) =>
-          itemIndex === index ? { ...item, added: true } : item
-        )
-      );
+    (routeCode: string, name: string) => {
+      watchlistActions.add(routeCode);
       toast.success(`已将 ${name} 加入自选`);
     },
     [toast]
@@ -577,7 +568,7 @@ export function Scanner() {
               />
             ) : (
               <div className={styles.resultList}>
-                {results.map((item, index) => (
+                {results.map((item) => (
                   <div
                     key={`${item.routeCode}-${item.signal}`}
                     className={styles.resultItem}
@@ -592,16 +583,16 @@ export function Scanner() {
                       <span className={styles.resultTime}>{item.time}</span>
                     </div>
                     <button
-                      className={`${styles.addBtn} ${item.added ? styles.added : ''}`}
+                      className={`${styles.addBtn} ${isInWatchlist(item.routeCode) ? styles.added : ''}`}
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (!item.added) {
-                          handleAddWatchlist(item.routeCode, item.name, index);
+                        if (!isInWatchlist(item.routeCode)) {
+                          handleAddWatchlist(item.routeCode, item.name);
                         }
                       }}
-                      disabled={item.added}
+                      disabled={isInWatchlist(item.routeCode)}
                     >
-                      {item.added ? <Check size={14} /> : <Plus size={14} />}
+                      {isInWatchlist(item.routeCode) ? <Check size={14} /> : <Plus size={14} />}
                     </button>
                   </div>
                 ))}

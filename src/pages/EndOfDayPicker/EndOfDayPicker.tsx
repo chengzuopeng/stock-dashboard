@@ -39,12 +39,9 @@ import {
   isAnalysisAborted,
   type TimelinePoint,
 } from '@/services/analysis';
-import {
-  addToWatchlist,
-  isInWatchlist,
-  getEodPickerState,
-  saveEodPickerState,
-} from '@/services/storage';
+import { getEodPickerState, saveEodPickerState } from '@/services/storage';
+import { watchlistActions } from '@/services/watchlistStore';
+import { useIsInWatchlist } from '@/hooks';
 import { formatAmount } from '@/utils/format';
 import styles from './EndOfDayPicker.module.css';
 
@@ -301,6 +298,7 @@ function StockCard({
 }) {
   const navigate = useNavigate();
   const isPositive = stock.changePercent >= 0;
+  const isInWatchlist = useIsInWatchlist();
   const inWatchlist = isInWatchlist(stock.routeCode);
 
   const handleCardClick = () => {
@@ -575,10 +573,8 @@ export function EndOfDayPicker() {
   // 加入自选
   const handleAddWatchlist = useCallback(
     (routeCode: string, name: string) => {
-      addToWatchlist(routeCode);
+      watchlistActions.add(routeCode);
       toast.success(`已将 ${name} 加入自选`);
-      // 强制刷新以更新按钮状态
-      setStocks((prev) => [...prev]);
     },
     [toast]
   );
@@ -676,17 +672,12 @@ export function EndOfDayPicker() {
 
   // 批量加入自选
   const handleBatchAddWatchlist = useCallback(() => {
-    let addedCount = 0;
-    selectedStocks.forEach((code) => {
-      const stock = stocks.find((s) => s.code === code);
-      if (stock && !isInWatchlist(stock.routeCode)) {
-        addToWatchlist(stock.routeCode);
-        addedCount++;
-      }
-    });
+    const routeCodes = stocks
+      .filter((stock) => selectedStocks.has(stock.code))
+      .map((stock) => stock.routeCode);
+    const addedCount = watchlistActions.batchAdd(routeCodes);
     if (addedCount > 0) {
       toast.success(`已将 ${addedCount} 只股票加入自选`);
-      setStocks((prev) => [...prev]); // 刷新状态
     } else {
       toast.info('所选股票已在自选中');
     }

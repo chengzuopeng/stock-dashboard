@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Card, Tabs, Loading, Empty, Button } from '@/components/common';
-import { usePolling } from '@/hooks';
+import { useAllWatchlistCodes, usePolling } from '@/hooks';
 import { useBoardData, useAppSettings } from '@/contexts';
 import {
   getAllAShareQuotes,
@@ -17,7 +17,7 @@ import {
   getNorthboundFlowSummary,
   getSectorFundFlowRank,
 } from '@/services/sdk';
-import { getAllWatchlistCodes } from '@/services/storage';
+import { selectAllCodes, watchlistStore } from '@/services/watchlistStore';
 import { isLimitDown, isLimitUp } from '@/services/analysis';
 import {
   formatPrice,
@@ -86,7 +86,7 @@ export function Dashboard() {
   const [initialLoading, setInitialLoading] = useState(true);
 
   // 获取自选代码
-  const watchlistCodes = getAllWatchlistCodes();
+  const watchlistCodes = useAllWatchlistCodes();
   const listRefreshInterval = getRefreshInterval('list');
   const breadthRefreshInterval = Math.max(listRefreshInterval * 4, 60000);
 
@@ -94,7 +94,7 @@ export function Dashboard() {
   // 自选代码在闭包内即时读取：依赖 length 的 memo 化会让轮询一直拉旧代码列表
   const fetchQuoteData = useCallback(async () => {
     try {
-      const codes = getAllWatchlistCodes();
+      const codes = selectAllCodes(watchlistStore.getSnapshot());
       const [indicesData, watchlistData] = await Promise.all([
         getFullQuotes(MAIN_INDICES),
         codes.length > 0

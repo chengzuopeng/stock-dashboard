@@ -25,11 +25,10 @@ import {
   getSearchHistory,
   addSearchHistory,
   clearSearchHistory,
-  addToWatchlist,
-  isInWatchlist,
 } from '@/services/storage';
+import { watchlistActions } from '@/services/watchlistStore';
 import { useToast } from '@/components/common';
-import { useTheme } from '@/hooks';
+import { useIsInWatchlist, useTheme } from '@/hooks';
 import type { SearchHistoryItem } from '@/types';
 import type { AppSearchResult } from '@/services/sdk';
 import styles from './Header.module.css';
@@ -48,7 +47,6 @@ export function Header() {
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [addedCodes, setAddedCodes] = useState<Set<string>>(new Set());
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -73,19 +71,16 @@ export function Header() {
       toast.info('当前结果暂不支持加入自选');
       return;
     }
-    if (addedCodes.has(item.code) || isInWatchlist(item.code)) {
+    if (checkIsInWatchlist(item.code)) {
       toast.info('已在自选中');
       return;
     }
-    addToWatchlist(item.code);
-    setAddedCodes(prev => new Set([...prev, item.code]));
+    watchlistActions.add(item.code);
     toast.success(`已将 ${item.name} 加入自选`);
   };
 
   // 检查是否已在自选
-  const checkIsInWatchlist = (code: string) => {
-    return addedCodes.has(code) || isInWatchlist(code);
-  };
+  const checkIsInWatchlist = useIsInWatchlist();
 
   // 加载搜索历史
   useEffect(() => {

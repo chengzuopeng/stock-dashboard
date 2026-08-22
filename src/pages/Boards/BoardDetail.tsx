@@ -16,9 +16,9 @@ import {
   getConceptSpot,
   getSectorFundFlowHistory,
 } from '@/services/sdk';
-import { addToWatchlist, isInWatchlist } from '@/services/storage';
+import { watchlistActions } from '@/services/watchlistStore';
 import { useBoardData, useAppSettings } from '@/contexts';
-import { useTheme } from '@/hooks';
+import { useIsInWatchlist, useTheme } from '@/hooks';
 import { getChartColors } from '@/components/charts/chartTheme';
 import {
   formatPrice,
@@ -70,7 +70,6 @@ export function BoardDetail() {
   // UI 状态
   const [loading, setLoading] = useState(true);
   const [klinePeriod, setKlinePeriod] = useState('daily');
-  const [addedCodes, setAddedCodes] = useState<Set<string>>(new Set());
 
   const isIndustry = type === 'industry';
   const boardInfo = useMemo(() => {
@@ -300,16 +299,13 @@ export function BoardDetail() {
   // 加入自选
   const handleAddWatchlist = (stockCode: string, stockName: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (addedCodes.has(stockCode) || isInWatchlist(stockCode)) return;
-    addToWatchlist(stockCode);
-    setAddedCodes(prev => new Set([...prev, stockCode]));
+    if (checkIsAdded(stockCode)) return;
+    watchlistActions.add(stockCode);
     toast.success(`已将 ${stockName} 加入自选`);
   };
 
   // 检查是否已加自选
-  const checkIsAdded = (stockCode: string) => {
-    return addedCodes.has(stockCode) || isInWatchlist(stockCode);
-  };
+  const checkIsAdded = useIsInWatchlist();
 
   if (loading || boardLoading) {
     return <Loading fullScreen text="加载板块数据..." />;

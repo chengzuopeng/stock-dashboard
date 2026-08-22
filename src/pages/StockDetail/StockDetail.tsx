@@ -26,7 +26,7 @@ import { LazyEChart } from '@/components/charts/LazyEChart';
 import { getChartColors, type ChartColors } from '@/components/charts/chartTheme';
 import { Button, Card, Loading, Tabs, useToast } from '@/components/common';
 import { useAppSettings } from '@/contexts';
-import { usePolling, useTheme } from '@/hooks';
+import { useAlertRules, useIsInWatchlist, usePolling, useTheme } from '@/hooks';
 import {
   getDividendDetail,
   getFullQuotes,
@@ -38,14 +38,7 @@ import {
   getPanelLargeOrder,
   getTodayTimeline,
 } from '@/services/sdk';
-import {
-  addAlertRule,
-  addToWatchlist,
-  deleteAlertRule,
-  getAlertsByCode,
-  isInWatchlist,
-  removeFromWatchlist,
-} from '@/services/storage';
+import { watchlistActions } from '@/services/watchlistStore';
 import type { AlertType } from '@/types';
 import type { IndicatorConfig } from '@/types';
 import {
@@ -757,10 +750,11 @@ export function StockDetail() {
   const [northboundHoldings, setNorthboundHoldings] =
     useState<NorthboundIndividualRows>([]);
   const [dividends, setDividends] = useState<DividendDetail[]>([]);
-  const [alerts, setAlerts] = useState(() => getAlertsByCode(normalizedCode));
+  const alerts = useAlertRules(normalizedCode);
 
   const [loading, setLoading] = useState(true);
-  const [inWatchlist, setInWatchlist] = useState(false);
+  const isInWatchlist = useIsInWatchlist();
+  const inWatchlist = isInWatchlist(normalizedCode);
   const [minutePeriod, setMinutePeriod] = useState('1');
   const [klinePeriod, setKlinePeriod] = useState('daily');
   const [selectedOverlays, setSelectedOverlays] = useState<OverlayIndicatorKey[]>(['ma']);
@@ -771,11 +765,6 @@ export function StockDetail() {
 
   const detailRefreshInterval = getRefreshInterval('detail');
   const fundRefreshInterval = Math.max(detailRefreshInterval * 6, 30000);
-
-  useEffect(() => {
-    setInWatchlist(isInWatchlist(normalizedCode));
-    setAlerts(getAlertsByCode(normalizedCode));
-  }, [normalizedCode]);
 
   // 每个 alertType 只预填一次：quote 随轮询高频更新，无守卫会持续覆写用户正在输入的阈值
   const prefilledAlertTypeRef = useRef<AlertType | null>(null);
@@ -1006,13 +995,12 @@ export function StockDetail() {
 
   const handleToggleWatchlist = useCallback(() => {
     if (inWatchlist) {
-      removeFromWatchlist(normalizedCode);
+      watchlistActions.remove(normalizedCode);
       toast.success('已从自选移除');
     } else {
-      addToWatchlist(normalizedCode);
+      watchlistActions.add(normalizedCode);
       toast.success('已加入自选');
     }
-    setInWatchlist((prev) => !prev);
   }, [inWatchlist, normalizedCode, toast]);
 
   const handleAddAlert = useCallback(() => {
@@ -1028,7 +1016,7 @@ export function StockDetail() {
       return;
     }
 
-    addAlertRule({
+    watchlistActions.addAlert({
       code: normalizedCode,
       name: quote.name,
       type: alertType,
@@ -1037,17 +1025,15 @@ export function StockDetail() {
       enabled: true,
       lastTriggeredAt: 0,
     });
-    setAlerts(getAlertsByCode(normalizedCode));
     toast.success('已添加本地告警');
   }, [alertType, alertValue, normalizedCode, quote, toast]);
 
   const handleDeleteAlert = useCallback(
     (ruleId: string) => {
-      deleteAlertRule(ruleId);
-      setAlerts(getAlertsByCode(normalizedCode));
+      watchlistActions.deleteAlert(ruleId);
       toast.success('已删除告警');
     },
-    [normalizedCode, toast]
+    [toast]
   );
 
   const latestNorthboundHolding = northboundHoldings.at(-1) ?? null;

@@ -26,6 +26,11 @@ const STORAGE_KEYS = {
   EOD_RECENT: 'end-of-day-picker-recent',
 } as const;
 
+export const WATCHLIST_STORAGE_KEYS: readonly string[] = [
+  STORAGE_KEYS.WATCHLIST_GROUPS,
+  STORAGE_KEYS.ALERTS,
+];
+
 // 默认设置
 const DEFAULT_SETTINGS: AppSettings = {
   refreshInterval: {
@@ -307,14 +312,19 @@ export function batchAddToWatchlist(codes: string[], groupId = 'default'): numbe
 /**
  * 更新分组内股票顺序
  */
-export function reorderWatchlist(groupId: string, codes: string[]): void {
+export function moveWatchlistCode(groupId: string, code: string, beforeCode: string | null): void {
+  const normalizedCode = normalizeStockCode(code);
+  const normalizedBefore = beforeCode ? normalizeStockCode(beforeCode) : null;
+  if (normalizedCode === normalizedBefore) return;
   const groups = getWatchlistGroups();
   const group = groups.find((g) => g.id === groupId);
-  if (group) {
-    group.codes = codes.map(normalizeStockCode).filter(Boolean) as string[];
-    group.updatedAt = Date.now();
-    saveWatchlistGroups(groups);
-  }
+  if (!group || !group.codes.includes(normalizedCode)) return;
+  const codes = group.codes.filter((c) => c !== normalizedCode);
+  const targetIndex = normalizedBefore ? codes.indexOf(normalizedBefore) : -1;
+  codes.splice(targetIndex === -1 ? codes.length : targetIndex, 0, normalizedCode);
+  group.codes = codes;
+  group.updatedAt = Date.now();
+  saveWatchlistGroups(groups);
 }
 
 // ========== 告警规则 ==========

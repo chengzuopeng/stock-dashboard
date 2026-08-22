@@ -22,24 +22,11 @@ import {
   Bell,
 } from 'lucide-react';
 import { Card, Button, Loading, Empty, useToast } from '@/components/common';
-import { usePolling } from '@/hooks';
+import { usePolling, useWatchlistState } from '@/hooks';
 import { useAppSettings } from '@/contexts';
 import { getAllQuotesByCodes } from '@/services/sdk';
-import {
-  getWatchlistGroups,
-  createWatchlistGroup,
-  deleteWatchlistGroup,
-  renameWatchlistGroup,
-  removeFromWatchlist,
-  batchRemoveFromWatchlist,
-  batchAddToWatchlist,
-  reorderWatchlist,
-  deleteAlertRule,
-  getAlertRules,
-  getTableColumns,
-  saveTableColumns,
-  updateAlertRule,
-} from '@/services/storage';
+import { getTableColumns, saveTableColumns } from '@/services/storage';
+import { watchlistActions, watchlistStore } from '@/services/watchlistStore';
 import {
   formatPrice,
   formatPercent,
@@ -48,7 +35,7 @@ import {
   getChangeColorClass,
   normalizeStockCode,
 } from '@/utils/format';
-import type { AlertRule, ColumnConfig, WatchlistGroup } from '@/types';
+import type { AlertRule, ColumnConfig } from '@/types';
 import type { FullQuote } from 'stock-sdk';
 import styles from './Watchlist.module.css';
 
@@ -138,14 +125,10 @@ export function Watchlist() {
   const { getRefreshInterval } = useAppSettings();
 
   // 初始化分组数据
-  const initialGroups = useMemo(() => getWatchlistGroups(), []);
-  const initialActiveGroupId = useMemo(() => {
-    return initialGroups.length > 0 ? initialGroups[0].id : 'default';
-  }, [initialGroups]);
+  const { groups, alerts } = useWatchlistState();
 
   // 状态
-  const [groups, setGroups] = useState<WatchlistGroup[]>(initialGroups);
-  const [activeGroupId, setActiveGroupId] = useState(initialActiveGroupId);
+  const [activeGroupId, setActiveGroupId] = useState(() => groups[0]?.id ?? 'default');
   const [quotes, setQuotes] = useState<Map<string, FullQuote>>(new Map());
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState('');
@@ -190,10 +173,10 @@ export function Watchlist() {
   }, [activeCodes]);
   const groupAlerts = useMemo(
     () =>
-      getAlertRules().filter((rule) =>
+      alerts.filter((rule) =>
         normalizedActiveCodes.includes(normalizeStockCode(rule.code))
       ),
-    [normalizedActiveCodes]
+    [alerts, normalizedActiveCodes]
   );
 
   // 计算加载状态
@@ -229,8 +212,9 @@ export function Watchlist() {
       const now = Date.now();
       const triggered: AlertRule[] = [];
 
-      getAlertRules()
-        .filter((rule) => rule.enabled)
+      watchlistStore
+        .getSnapshot()
+        .alerts.filter((rule) => rule.enabled)
         .forEach((rule) => {
           const normalized = normalizeStockCode(rule.code);
           const currentQuote = map.get(normalized);
@@ -246,7 +230,7 @@ export function Watchlist() {
             return;
           }
 
-          updateAlertRule(rule.id, { lastTriggeredAt: now });
+          watchlistActions.updateAlert(rule.id, { lastTriggeredAt: now });
           triggered.push(rule);
         });
 
@@ -272,6 +256,7 @@ export function Watchlist() {
   });
 
   // 非空组之间切换不触发轮询 effect（enabled 不变），需主动刷新，否则表格空白到下个 tick
+  const activeCodesKey = normalizedActiveCodes.join(',');
   const groupSwitchInitRef = useRef(false);
   useEffect(() => {
     if (!groupSwitchInitRef.current) {
@@ -279,13 +264,12 @@ export function Watchlist() {
       return;
     }
     refreshQuotes();
-  }, [activeGroupId, refreshQuotes]);
+  }, [activeGroupId, activeCodesKey, refreshQuotes]);
 
   // 创建分组
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
-    const newGroup = createWatchlistGroup(newGroupName.trim());
-    setGroups(getWatchlistGroups());
+    const newGroup = watchlistActions.createGroup(newGroupName.trim());
     setActiveGroupId(newGroup.id);
     setNewGroupName('');
   };
@@ -294,8 +278,7 @@ export function Watchlist() {
   const handleDeleteGroup = (groupId: string) => {
     if (groupId === 'default') return;
     if (confirm('确定删除该分组？分组内的股票将被移除。')) {
-      deleteWatchlistGroup(groupId);
-      setGroups(getWatchlistGroups());
+      watchlistActions.deleteGroup(groupId);
       if (activeGroupId === groupId) {
         setActiveGroupId('default');
       }
@@ -304,15 +287,13 @@ export function Watchlist() {
 
   // 重命名分组
   const handleRenameGroup = (groupId: string, name: string) => {
-    renameWatchlistGroup(groupId, name);
-    setGroups(getWatchlistGroups());
+    watchlistActions.renameGroup(groupId, name);
     setEditingGroup(null);
   };
 
   // 移除股票
   const handleRemoveStock = (code: string) => {
-    removeFromWatchlist(code, activeGroupId);
-    setGroups(getWatchlistGroups());
+    watchlistActions.remove(code, activeGroupId);
   };
 
   // 跳转详情
@@ -355,8 +336,7 @@ export function Watchlist() {
   // 批量删除
   const handleBatchDelete = useCallback(() => {
     if (selectedStocks.size === 0) return;
-    batchRemoveFromWatchlist(Array.from(selectedStocks), activeGroupId);
-    setGroups(getWatchlistGroups());
+    watchlistActions.batchRemove(Array.from(selectedStocks), activeGroupId);
     toast.success(`已删除 ${selectedStocks.size} 只股票`);
     setSelectedStocks(new Set());
     setShowSelectMode(false);
@@ -414,11 +394,10 @@ export function Watchlist() {
       return;
     }
 
-    const addedCount = batchAddToWatchlist(Array.from(validCodes), activeGroupId);
-    setGroups(getWatchlistGroups());
+    const addedCount = watchlistActions.batchAdd(Array.from(validCodes), activeGroupId);
     setImportText('');
     setShowImportModal(false);
-    
+
     if (addedCount > 0) {
       const suffix =
         invalidCodes.size > 0 ? `，已跳过 ${invalidCodes.size} 个无效代码` : '';
@@ -455,13 +434,14 @@ export function Watchlist() {
   }, [draggedCode, normalizedActiveCodes]);
 
   const handleDrop = useCallback(() => {
-    if (dragPreviewCodes) {
-      reorderWatchlist(activeGroupId, dragPreviewCodes);
-      setGroups(getWatchlistGroups());
+    const draggedIndex =
+      draggedCode && dragPreviewCodes ? dragPreviewCodes.indexOf(draggedCode) : -1;
+    if (draggedCode && dragPreviewCodes && draggedIndex !== -1) {
+      watchlistActions.move(activeGroupId, draggedCode, dragPreviewCodes[draggedIndex + 1] ?? null);
     }
     setDraggedCode(null);
     setDragPreviewCodes(null);
-  }, [dragPreviewCodes, activeGroupId]);
+  }, [draggedCode, dragPreviewCodes, activeGroupId]);
 
   // dragend 在 drop 之后触发；未 drop（Esc/拖出去）则丢弃预览，持久化顺序不变
   const handleDragEnd = useCallback(() => {
@@ -681,10 +661,7 @@ export function Watchlist() {
                         </div>
                         <button
                           className={styles.alertRemoveBtn}
-                          onClick={() => {
-                            deleteAlertRule(rule.id);
-                            setGroups(getWatchlistGroups());
-                          }}
+                          onClick={() => watchlistActions.deleteAlert(rule.id)}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -754,18 +731,19 @@ export function Watchlist() {
                 <div className={styles.tableBody}>
                   <AnimatePresence>
                     {sortedStocks.map((quote) => {
-                      const isSelected = selectedStocks.has(quote.code);
+                      const rowCode = normalizeStockCode(quote.code);
+                      const isSelected = selectedStocks.has(rowCode);
                       return (
                         <motion.div
                           key={quote.code}
-                          className={`${styles.tableRow} ${isSelected ? styles.selected : ''} ${draggedCode === quote.code ? styles.dragging : ''}`}
+                          className={`${styles.tableRow} ${isSelected ? styles.selected : ''} ${draggedCode === rowCode ? styles.dragging : ''}`}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 10 }}
                           onClick={() => !showSelectMode && handleStockClick(quote.code)}
                           draggable={sortField === 'default' && !showSelectMode}
-                          onDragStart={() => handleDragStart(quote.code)}
-                          onDragOver={(e) => handleDragOver(e, quote.code)}
+                          onDragStart={() => handleDragStart(rowCode)}
+                          onDragOver={(e) => handleDragOver(e, rowCode)}
                           onDrop={handleDrop}
                           onDragEnd={handleDragEnd}
                         >
@@ -775,7 +753,7 @@ export function Watchlist() {
                                 className={styles.selectBtn}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleToggleSelect(quote.code);
+                                  handleToggleSelect(rowCode);
                                 }}
                               >
                                 {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
