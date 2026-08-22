@@ -2,7 +2,7 @@
  * 板块详情页
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useEffectEvent, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, Check } from 'lucide-react';
@@ -129,27 +129,30 @@ export function BoardDetail() {
   }, [code]);
 
   // 初始加载（只在板块代码变化时触发）
+  const loadAll = useEffectEvent(async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchConstituents(),
+      fetchSpot(),
+      fetchFundFlowHistory(),
+      fetchKline(),
+    ]);
+    setLoading(false);
+  });
+
   useEffect(() => {
-    const loadAll = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchConstituents(),
-        fetchSpot(),
-        fetchFundFlowHistory(),
-        fetchKline(),
-      ]);
-      setLoading(false);
-    };
     loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, isIndustry]);
 
   // 周期变化时重新加载 K 线（不触发全页 loading）
-  useEffect(() => {
+  const reloadKline = useEffectEvent(() => {
     if (!loading && code) {
       fetchKline();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+
+  useEffect(() => {
+    reloadKline();
   }, [klinePeriod]);
 
   // K线图配置

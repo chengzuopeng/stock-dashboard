@@ -83,13 +83,6 @@ export interface SearchHistoryItem {
   timestamp: number;
 }
 
-/** 缓存项 */
-export interface CacheItem<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-}
-
 /** 刷新状态 */
 export type RefreshStatus = 'idle' | 'loading' | 'success' | 'error';
 

@@ -2,18 +2,10 @@
  * 个股详情页
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Star, StarOff, Bell, Trash2 } from 'lucide-react';
-import {
-  addIndicators,
-  calcDMI,
-  calcKC,
-  calcOBV,
-  calcROC,
-  calcSAR,
-} from 'stock-sdk/indicators';
 import type {
   DividendDetail,
   FundFlow,
@@ -31,15 +23,15 @@ import {
   getDividendDetail,
   getFullQuotes,
   getFundFlow,
-  getHistoryKline,
   getIndividualFundFlow,
+  getKlineWithIndicators,
   getMinuteKline,
   getNorthboundIndividual,
   getPanelLargeOrder,
   getTodayTimeline,
 } from '@/services/sdk';
 import { watchlistActions } from '@/services/watchlistStore';
-import type { AlertType } from '@/types';
+import type { AlertType, KlinePeriod } from '@/types';
 import type { IndicatorConfig } from '@/types';
 import {
   formatAmount,
@@ -55,6 +47,7 @@ import {
   formatYuanAmount,
   getChangeColorClass,
   normalizeStockCode,
+  toYmd,
 } from '@/utils/format';
 import styles from './StockDetail.module.css';
 
@@ -66,6 +59,20 @@ const KLINE_PERIODS = [
   { key: 'weekly', label: '周K' },
   { key: 'monthly', label: '月K' },
 ];
+
+const KLINE_WINDOW_YEARS: Record<KlinePeriod, number | null> = {
+  daily: 3,
+  weekly: 10,
+  monthly: null,
+};
+
+function getKlineStartDate(period: KlinePeriod): string | undefined {
+  const years = KLINE_WINDOW_YEARS[period];
+  if (years === null) return undefined;
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - years);
+  return toYmd(date);
+}
 
 const MINUTE_PERIODS = [
   { key: '1', label: '分时' },
@@ -808,9 +815,12 @@ export function StockDetail() {
 
   // 周期切换后旧周期的慢响应可能后到，比对最新周期丢弃过期数据
   const minutePeriodRef = useRef(minutePeriod);
-  minutePeriodRef.current = minutePeriod;
   const klinePeriodRef = useRef(klinePeriod);
-  klinePeriodRef.current = klinePeriod;
+
+  useEffect(() => {
+    minutePeriodRef.current = minutePeriod;
+    klinePeriodRef.current = klinePeriod;
+  }, [minutePeriod, klinePeriod]);
 
   const fetchTimeline = useCallback(async () => {
     if (!normalizedCode) {
@@ -843,51 +853,27 @@ export function StockDetail() {
       return;
     }
 
-    const requestPeriod = klinePeriod;
+    const requestPeriod = klinePeriod as KlinePeriod;
     try {
-      const history = await getHistoryKline(normalizedCode, {
-        period: requestPeriod as 'daily' | 'weekly' | 'monthly',
+      const data = await getKlineWithIndicators(normalizedCode, {
+        period: requestPeriod,
         adjust: 'qfq',
+        startDate: getKlineStartDate(requestPeriod),
+        indicators: {
+          ma: { periods: settings.indicatorConfig.ma },
+          macd: settings.indicatorConfig.macd,
+          boll: settings.indicatorConfig.boll,
+          kdj: settings.indicatorConfig.kdj,
+          rsi: { periods: settings.indicatorConfig.rsi },
+          obv: { maPeriod: settings.indicatorConfig.ma[1] ?? 10 },
+          roc: { period: 12, signalPeriod: 6 },
+          dmi: settings.indicatorConfig.dmi,
+          sar: settings.indicatorConfig.sar,
+          kc: settings.indicatorConfig.kc,
+        },
       });
       if (klinePeriodRef.current !== requestPeriod) return;
-
-      const enriched = addIndicators(history, {
-        ma: { periods: settings.indicatorConfig.ma },
-        macd: settings.indicatorConfig.macd,
-        boll: settings.indicatorConfig.boll,
-        kdj: settings.indicatorConfig.kdj,
-        rsi: { periods: settings.indicatorConfig.rsi },
-      });
-
-      const ohlcv = history.map((item) => ({
-        open: item.open,
-        high: item.high,
-        low: item.low,
-        close: item.close,
-        volume: item.volume,
-      }));
-
-      const obv = calcOBV(ohlcv, { maPeriod: settings.indicatorConfig.ma[1] ?? 10 });
-      const roc = calcROC(ohlcv, { period: 12, signalPeriod: 6 });
-      const dmi = calcDMI(ohlcv, settings.indicatorConfig.dmi);
-      const sar = calcSAR(ohlcv, settings.indicatorConfig.sar);
-      const kc = calcKC(ohlcv, settings.indicatorConfig.kc);
-
-      setKlineData(
-        enriched.map((item, index) => ({
-          ...(item as HistoryKline),
-          ma: item.ma as Record<string, number> | undefined,
-          macd: item.macd as { dif?: number; dea?: number; macd?: number } | undefined,
-          boll: item.boll as { upper?: number; mid?: number; lower?: number } | undefined,
-          kdj: item.kdj as { k?: number; d?: number; j?: number } | undefined,
-          rsi: item.rsi as Record<string, number> | undefined,
-          obv: obv[index],
-          roc: roc[index],
-          dmi: dmi[index],
-          sar: sar[index],
-          kc: kc[index],
-        }))
-      );
+      setKlineData(data as unknown as KlineDataItem[]);
     } catch (error) {
       console.error('Fetch kline error:', error);
     }
@@ -940,41 +926,38 @@ export function StockDetail() {
 
   // 整载只跑一次（换股由路由 key 重挂载触发）；周期/指标变化走下面的专属增量 effect，
   // 若把 fetch 回调放进依赖，切个 tab 就会全屏 loading + 五个接口全部重拉
-  useEffect(() => {
-    const loadInitial = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchQuote(),
-        fetchTimeline(),
-        fetchKline(),
-        fetchFundData(),
-        fetchDividendData(),
-      ]);
-      setLoading(false);
-    };
+  const loadInitial = useEffectEvent(async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchQuote(),
+      fetchTimeline(),
+      fetchKline(),
+      fetchFundData(),
+      fetchDividendData(),
+    ]);
+    setLoading(false);
+  });
 
+  useEffect(() => {
     loadInitial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [normalizedCode]);
 
   // 跳过挂载首轮（loadInitial 已拉过），只响应周期/指标配置变化
-  const timelineFetchedOnceRef = useRef(false);
-  useEffect(() => {
-    if (!timelineFetchedOnceRef.current) {
-      timelineFetchedOnceRef.current = true;
-      return;
-    }
-    fetchTimeline();
-  }, [fetchTimeline]);
+  const reloadTimeline = useEffectEvent(() => {
+    if (!loading) fetchTimeline();
+  });
 
-  const klineFetchedOnceRef = useRef(false);
   useEffect(() => {
-    if (!klineFetchedOnceRef.current) {
-      klineFetchedOnceRef.current = true;
-      return;
-    }
-    fetchKline();
-  }, [fetchKline]);
+    reloadTimeline();
+  }, [minutePeriod]);
+
+  const reloadKline = useEffectEvent(() => {
+    if (!loading) fetchKline();
+  });
+
+  useEffect(() => {
+    reloadKline();
+  }, [klinePeriod, settings.indicatorConfig]);
 
   usePolling(
     useCallback(async () => {

@@ -3,7 +3,7 @@
  * 避免多个页面重复请求相同的板块列表数据
  */
 
-import { useState, useCallback, useRef, type ReactNode } from 'react';
+import { useState, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { getIndustryList, getConceptList } from '@/services/sdk';
 import type { IndustryBoard, ConceptBoard } from 'stock-sdk';
 import { BoardDataContext } from './boardDataValueContext';
@@ -23,6 +23,7 @@ export function BoardDataProvider({ children }: BoardDataProviderProps) {
   const [conceptList, setConceptList] = useState<ConceptBoard[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [subscriberCount, setSubscriberCount] = useState(0);
 
   const isFetchingRef = useRef(false);
   // 节流基准走 ref：进 useCallback 依赖会让每次成功拉取都重建回调、重触发轮询 effect
@@ -62,8 +63,14 @@ export function BoardDataProvider({ children }: BoardDataProviderProps) {
     }
   }, []);
 
+  const subscribe = useCallback(() => {
+    setSubscriberCount((count) => count + 1);
+    return () => setSubscriberCount((count) => count - 1);
+  }, []);
+
   usePolling(fetchData, {
     interval: refreshInterval,
+    enabled: subscriberCount > 0,
     pauseOnHidden: true,
     immediate: true,
   });
@@ -72,16 +79,20 @@ export function BoardDataProvider({ children }: BoardDataProviderProps) {
     await fetchData(true);
   }, [fetchData]);
 
+  const value = useMemo(
+    () => ({
+      industryList,
+      conceptList,
+      loading,
+      lastUpdated,
+      refresh,
+      subscribe,
+    }),
+    [industryList, conceptList, loading, lastUpdated, refresh, subscribe]
+  );
+
   return (
-    <BoardDataContext.Provider
-      value={{
-        industryList,
-        conceptList,
-        loading,
-        lastUpdated,
-        refresh,
-      }}
-    >
+    <BoardDataContext.Provider value={value}>
       {children}
     </BoardDataContext.Provider>
   );

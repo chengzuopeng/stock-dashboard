@@ -8,7 +8,7 @@
  */
 
 import { StockSDK } from 'stock-sdk';
-import type { CacheItem } from '@/types';
+import { MemoryCache } from 'stock-sdk/cache';
 import type { DividendDetail, SearchResult as SDKSearchResult } from 'stock-sdk';
 import { normalizeStockCode } from '@/utils/format';
 
@@ -84,7 +84,7 @@ export const sdk = new StockSDK({
 });
 
 // 内存缓存
-const cache = new Map<string, CacheItem<unknown>>();
+const cache = new MemoryCache<unknown>({ maxSize: 300 });
 
 // 默认 TTL 配置（毫秒）
 // 优化：增加缓存时间以减少 API 请求频率
@@ -144,65 +144,14 @@ function getCacheKey(method: string, ...args: unknown[]): string {
 }
 
 /**
- * 从缓存获取数据
- */
-function getFromCache<T>(key: string): T | null {
-  const item = cache.get(key) as CacheItem<T> | undefined;
-  if (!item) return null;
-
-  const now = Date.now();
-  if (now - item.timestamp > item.ttl) {
-    cache.delete(key);
-    return null;
-  }
-
-  return item.data;
-}
-
-/**
- * 设置缓存
- */
-function setCache<T>(key: string, data: T, ttl: number): void {
-  cache.set(key, {
-    data,
-    timestamp: Date.now(),
-    ttl,
-  });
-}
-
-// 在途请求去重：缓存只在 resolve 后写入，并发调用（如 Dashboard 与 Scanner 同时拉快照）会各发一份
-const inFlight = new Map<string, Promise<unknown>>();
-
-/**
  * 带缓存的 SDK 调用包装器
  */
-async function withCache<T>(
+function withCache<T>(
   key: string,
   ttl: number,
   fetcher: () => Promise<T>
 ): Promise<T> {
-  const cached = getFromCache<T>(key);
-  if (cached !== null) {
-    return cached;
-  }
-
-  const pending = inFlight.get(key) as Promise<T> | undefined;
-  if (pending) {
-    return pending;
-  }
-
-  const promise = (async () => {
-    try {
-      const data = await fetcher();
-      setCache(key, data, ttl);
-      return data;
-    } finally {
-      inFlight.delete(key);
-    }
-  })();
-
-  inFlight.set(key, promise);
-  return promise;
+  return cache.getOrFetch(key, fetcher, ttl) as Promise<T>;
 }
 
 // ========== 实时行情 API ==========
@@ -269,24 +218,7 @@ export async function getHistoryKline(
  */
 export async function getKlineWithIndicators(
   symbol: string,
-  options?: {
-    market?: 'A' | 'HK' | 'US';
-    period?: 'daily' | 'weekly' | 'monthly';
-    adjust?: '' | 'qfq' | 'hfq';
-    startDate?: string;
-    endDate?: string;
-    indicators?: {
-      ma?: { periods?: number[] } | boolean;
-      macd?: { short?: number; long?: number; signal?: number } | boolean;
-      boll?: { period?: number; stdDev?: number } | boolean;
-      kdj?: { period?: number; kPeriod?: number; dPeriod?: number } | boolean;
-      rsi?: { periods?: number[] } | boolean;
-      wr?: { periods?: number[] } | boolean;
-      bias?: { periods?: number[] } | boolean;
-      cci?: { period?: number } | boolean;
-      atr?: { period?: number } | boolean;
-    };
-  }
+  options?: Parameters<typeof sdk.kline.withIndicators>[1]
 ) {
   const key = getCacheKey('getKlineWithIndicators', symbol, options);
   return withCache(key, DEFAULT_TTL.indicatorKline, () =>

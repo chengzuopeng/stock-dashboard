@@ -4,7 +4,7 @@ import {
   getKlineWithIndicators,
   getTodayTimeline,
 } from './sdk';
-import { normalizeStockCode, parseStockCode } from '@/utils/format';
+import { normalizeStockCode, parseStockCode, toYmd } from '@/utils/format';
 
 export interface AnalysisProgress {
   completed: number;
@@ -424,12 +424,17 @@ export async function scanSignalPool(
     boll: signals.some((signal) => signal.startsWith('boll_')),
   };
 
+  const windowStart = new Date();
+  windowStart.setFullYear(windowStart.getFullYear() - 1);
+  const startDate = toYmd(windowStart);
+
   const results = await mapWithConcurrency(
     pool,
     async (stock) => {
       const klineData = await getKlineWithIndicators(stock.routeCode, {
         period: 'daily',
         adjust: 'qfq',
+        startDate,
         indicators,
       });
 

@@ -10,6 +10,7 @@ import {
   getChangeColorClass,
   normalizeStockCode,
   parseStockCode,
+  toYmd,
 } from './format';
 
 describe('parseStockCode', () => {
@@ -96,5 +97,12 @@ describe('getChangeColorClass', () => {
     expect(getChangeColorClass(-1)).toBe('text-fall');
     expect(getChangeColorClass(0)).toBe('text-flat');
     expect(getChangeColorClass(null)).toBe('text-flat');
+  });
+});
+
+describe('toYmd', () => {
+  it('formats local dates as zero-padded YYYYMMDD', () => {
+    expect(toYmd(new Date(2026, 0, 5))).toBe('20260105');
+    expect(toYmd(new Date(2025, 11, 31))).toBe('20251231');
   });
 });
