@@ -3,6 +3,10 @@
    扁平化设计 / 暗色主题
    ============================================ */
 
+@import '@fontsource/jetbrains-mono/latin-400.css';
+@import '@fontsource/jetbrains-mono/latin-500.css';
+@import '@fontsource/jetbrains-mono/latin-600.css';
+
 :root {
   /* 基础色板 - 深色主题 (纯色极简 Zinc 风格) */
   --bg-primary: #09090b;      /* Zinc 950 - 极致深灰/近黑 */
@@ -82,7 +86,7 @@
   
   /* 字体 */
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
-  --font-sans: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   --font-size-xs: 11px;
   --font-size-sm: 12px;
   --font-size-base: 13px;
