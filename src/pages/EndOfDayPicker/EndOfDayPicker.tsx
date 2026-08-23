@@ -284,6 +284,7 @@ function TimelineChart({ data, prevClose }: { data: TimelinePoint[]; prevClose: 
 function StockCard({
   stock,
   index,
+  inWatchlist,
   onAddWatchlist,
   isSelected,
   onToggleSelect,
@@ -291,6 +292,7 @@ function StockCard({
 }: {
   stock: EndOfDayStock;
   index: number;
+  inWatchlist: boolean;
   onAddWatchlist: (routeCode: string, name: string) => void;
   isSelected?: boolean;
   onToggleSelect?: (code: string) => void;
@@ -298,8 +300,6 @@ function StockCard({
 }) {
   const navigate = useNavigate();
   const isPositive = stock.changePercent >= 0;
-  const isInWatchlist = useIsInWatchlist();
-  const inWatchlist = isInWatchlist(stock.routeCode);
 
   const handleCardClick = () => {
     navigate(`/s/${stock.routeCode}`);
@@ -1218,6 +1218,7 @@ export function EndOfDayPicker() {
                       key={stock.code}
                       stock={stock}
                       index={index}
+                      inWatchlist={isInWatchlist(stock.routeCode)}
                       onAddWatchlist={handleAddWatchlist}
                       isSelected={selectedStocks.has(stock.code)}
                       onToggleSelect={handleToggleSelect}
