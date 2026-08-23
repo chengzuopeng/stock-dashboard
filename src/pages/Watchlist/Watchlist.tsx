@@ -128,7 +128,7 @@ export function Watchlist() {
   const { groups, alerts } = useWatchlistState();
 
   // 状态
-  const [activeGroupId, setActiveGroupId] = useState(() => groups[0]?.id ?? 'default');
+  const [selectedGroupId, setSelectedGroupId] = useState(() => groups[0]?.id ?? 'default');
   const [quotes, setQuotes] = useState<Map<string, FullQuote>>(new Map());
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState('');
@@ -154,7 +154,11 @@ export function Watchlist() {
   const [quotesError, setQuotesError] = useState(false);
 
   // 当前分组
-  const activeGroup = groups.find((g) => g.id === activeGroupId);
+  const activeGroup =
+    groups.find((g) => g.id === selectedGroupId) ??
+    groups.find((g) => g.id === 'default') ??
+    groups[0];
+  const activeGroupId = activeGroup?.id ?? 'default';
   const activeCodes = useMemo(() => activeGroup?.codes || [], [activeGroup?.codes]);
   const visibleColumns = useMemo(
     () => columns.filter((column) => column.visible).map((column) => column.key),
@@ -270,7 +274,7 @@ export function Watchlist() {
   const handleCreateGroup = () => {
     if (!newGroupName.trim()) return;
     const newGroup = watchlistActions.createGroup(newGroupName.trim());
-    setActiveGroupId(newGroup.id);
+    setSelectedGroupId(newGroup.id);
     setNewGroupName('');
   };
 
@@ -280,7 +284,7 @@ export function Watchlist() {
     if (confirm('确定删除该分组？分组内的股票将被移除。')) {
       watchlistActions.deleteGroup(groupId);
       if (activeGroupId === groupId) {
-        setActiveGroupId('default');
+        setSelectedGroupId('default');
       }
     }
   };
@@ -491,7 +495,7 @@ export function Watchlist() {
             <div
               key={group.id}
               className={`${styles.groupItem} ${activeGroupId === group.id ? styles.active : ''}`}
-              onClick={() => setActiveGroupId(group.id)}
+              onClick={() => setSelectedGroupId(group.id)}
             >
               {editingGroup === group.id ? (
                 <input
