@@ -254,3 +254,9 @@ export function toYmd(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}${month}${day}`;
 }
+
+export function yearsAgoYmd(years: number, from: Date = new Date()): string {
+  const date = new Date(from);
+  date.setFullYear(date.getFullYear() - years);
+  return toYmd(date);
+}

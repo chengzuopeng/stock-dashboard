@@ -11,6 +11,7 @@ import {
   normalizeStockCode,
   parseStockCode,
   toYmd,
+  yearsAgoYmd,
 } from './format';
 
 describe('parseStockCode', () => {
@@ -104,5 +105,12 @@ describe('toYmd', () => {
   it('formats local dates as zero-padded YYYYMMDD', () => {
     expect(toYmd(new Date(2026, 0, 5))).toBe('20260105');
     expect(toYmd(new Date(2025, 11, 31))).toBe('20251231');
+  });
+});
+
+describe('yearsAgoYmd', () => {
+  it('shifts the calendar year back from the given date', () => {
+    expect(yearsAgoYmd(3, new Date(2026, 8, 14))).toBe('20230914');
+    expect(yearsAgoYmd(1, new Date(2026, 0, 5))).toBe('20250105');
   });
 });

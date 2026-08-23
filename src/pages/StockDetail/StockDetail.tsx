@@ -47,7 +47,7 @@ import {
   formatYuanAmount,
   getChangeColorClass,
   normalizeStockCode,
-  toYmd,
+  yearsAgoYmd,
 } from '@/utils/format';
 import styles from './StockDetail.module.css';
 
@@ -63,10 +63,7 @@ const KLINE_PERIODS = [
 const DAILY_KLINE_WINDOW_YEARS = 3;
 
 function getKlineStartDate(period: KlinePeriod): string | undefined {
-  if (period !== 'daily') return undefined;
-  const date = new Date();
-  date.setFullYear(date.getFullYear() - DAILY_KLINE_WINDOW_YEARS);
-  return toYmd(date);
+  return period === 'daily' ? yearsAgoYmd(DAILY_KLINE_WINDOW_YEARS) : undefined;
 }
 
 const MINUTE_PERIODS = [
