@@ -14,6 +14,7 @@ interface UsePollingOptions {
   pauseOnHidden?: boolean;
   /** 立即执行一次 */
   immediate?: boolean;
+  refreshKey?: string;
 }
 
 interface UsePollingReturn {
@@ -45,6 +46,7 @@ export function usePolling<T>(
     enabled = true,
     pauseOnHidden = true,
     immediate = true,
+    refreshKey,
   } = options;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -131,12 +133,16 @@ export function usePolling<T>(
     };
   }, [pauseOnHidden, canRun, clearTimer, refresh, scheduleNext]);
 
+  const refreshKeyRef = useRef(refreshKey);
+
   // 启动/停止轮询
   useEffect(() => {
     isMountedRef.current = true;
+    const refreshKeyChanged = refreshKeyRef.current !== refreshKey;
+    refreshKeyRef.current = refreshKey;
 
     if (enabled && !isPaused) {
-      if (immediate) {
+      if (immediate || refreshKeyChanged) {
         refresh().then(scheduleNext);
       } else {
         scheduleNext();
@@ -147,7 +153,7 @@ export function usePolling<T>(
       isMountedRef.current = false;
       clearTimer();
     };
-  }, [enabled, isPaused, immediate, interval, refresh, scheduleNext, clearTimer]);
+  }, [enabled, isPaused, immediate, interval, refreshKey, refresh, scheduleNext, clearTimer]);
 
   return {
     isLoading,

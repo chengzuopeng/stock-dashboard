@@ -2,7 +2,7 @@
  * 自选管理页
  */
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -259,22 +259,12 @@ export function Watchlist() {
   }, [normalizedActiveCodes, toast]);
 
   // 轮询（优化：从 5s 改为 10s，减少 API 请求）
-  const { refresh: refreshQuotes } = usePolling(fetchQuotes, {
+  usePolling(fetchQuotes, {
     interval: getRefreshInterval('list'),
     enabled: normalizedActiveCodes.length > 0,
     immediate: true,
+    refreshKey: normalizedActiveCodes.join(','),
   });
-
-  // 非空组之间切换不触发轮询 effect（enabled 不变），需主动刷新，否则表格空白到下个 tick
-  const activeCodesKey = normalizedActiveCodes.join(',');
-  const groupSwitchInitRef = useRef(false);
-  useEffect(() => {
-    if (!groupSwitchInitRef.current) {
-      groupSwitchInitRef.current = true;
-      return;
-    }
-    refreshQuotes();
-  }, [activeGroupId, activeCodesKey, refreshQuotes]);
 
   // 创建分组
   const handleCreateGroup = () => {

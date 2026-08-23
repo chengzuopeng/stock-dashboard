@@ -2,7 +2,7 @@
  * 热力图页面
  */
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Grid3X3, Building2, Lightbulb, Star } from 'lucide-react';
@@ -174,21 +174,11 @@ export function Heatmap() {
   const isStockDimension = config.dimension === 'stock' || config.dimension === 'watchlist';
 
   // 轮询个股数据（板块数据由全局 Context 管理，无需轮询）
-  const stockPollingEnabled = !boardLoading && isStockDimension;
-  const { refresh: refreshStockData } = usePolling(fetchStockData, {
+  usePolling(fetchStockData, {
     interval: getRefreshInterval('heatmap'),
-    enabled: stockPollingEnabled,
+    enabled: !boardLoading && isStockDimension,
+    refreshKey: `${config.dimension}:${config.topK}`,
   });
-
-  const stockQueryKey = `${config.dimension}:${config.topK}`;
-  const lastStockQueryRef = useRef({ key: stockQueryKey, enabled: stockPollingEnabled });
-  useEffect(() => {
-    const last = lastStockQueryRef.current;
-    lastStockQueryRef.current = { key: stockQueryKey, enabled: stockPollingEnabled };
-    if (last.enabled && stockPollingEnabled && last.key !== stockQueryKey) {
-      refreshStockData();
-    }
-  }, [stockQueryKey, stockPollingEnabled, refreshStockData]);
 
   // 兼容旧逻辑的 loading 状态
   const loading = boardLoading;
