@@ -11,25 +11,32 @@ interface ToastMessage {
   id: number;
   type: ToastType;
   message: string;
+  leaving: boolean;
 }
+
+const TOAST_DURATION_MS = 3000;
+const TOAST_EXIT_MS = 200;
 
 let toastId = 0;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const addToast = useCallback((type: ToastType, message: string) => {
-    const id = ++toastId;
-    setToasts((prev) => [...prev, { id, type, message }]);
-
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
+    }, TOAST_EXIT_MS);
   }, []);
 
-  const removeToast = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  const addToast = useCallback(
+    (type: ToastType, message: string) => {
+      const id = ++toastId;
+      setToasts((prev) => [...prev, { id, type, message, leaving: false }]);
+      setTimeout(() => dismissToast(id), TOAST_DURATION_MS);
+    },
+    [dismissToast]
+  );
 
   // context value 不 memo 的话，每条 toast 的出现/消失都会重渲染所有 useToast 消费页
   const value: ToastContextValue = useMemo(
@@ -60,12 +67,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className={styles.container}>
         {toasts.map((toast) => (
-          <div key={toast.id} className={`${styles.toast} ${styles[toast.type]}`}>
+          <div
+            key={toast.id}
+            className={`${styles.toast} ${styles[toast.type]} ${toast.leaving ? styles.leaving : ''}`}
+          >
             <span className={styles.icon}>{getIcon(toast.type)}</span>
             <span className={styles.message}>{toast.message}</span>
             <button
               className={styles.closeBtn}
-              onClick={() => removeToast(toast.id)}
+              onClick={() => dismissToast(toast.id)}
             >
               <X size={14} />
             </button>

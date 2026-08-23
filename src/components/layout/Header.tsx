@@ -220,6 +220,11 @@ export function Header() {
   };
 
   const showDropdown = isOpen && (keyword ? results.length > 0 : history.length > 0);
+  const [dropdownRendered, setDropdownRendered] = useState(showDropdown);
+  if (showDropdown && !dropdownRendered) {
+    setDropdownRendered(true);
+  }
+  const dropdownClosing = dropdownRendered && !showDropdown;
 
   return (
     <header className={styles.header}>
@@ -252,8 +257,15 @@ export function Header() {
           {isLoading && <RefreshCw size={14} className={styles.loadingIcon} />}
         </div>
 
-        {showDropdown && (
-          <div className={styles.dropdown}>
+        {dropdownRendered && (
+          <div
+            className={`${styles.dropdown} ${dropdownClosing ? styles.dropdownLeaving : ''}`}
+            onAnimationEnd={(event) => {
+              if (dropdownClosing && event.target === event.currentTarget) {
+                setDropdownRendered(false);
+              }
+            }}
+          >
             {keyword ? (
               // 搜索结果
               <div className={styles.resultList}>

@@ -111,6 +111,22 @@
   }
 }
 
+.dropdownLeaving {
+  animation: dropdownOut 0.15s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes dropdownOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
 .resultList,
 .historyList {
   padding: var(--spacing-xs);
