@@ -174,21 +174,21 @@ export function Heatmap() {
   const isStockDimension = config.dimension === 'stock' || config.dimension === 'watchlist';
 
   // 轮询个股数据（板块数据由全局 Context 管理，无需轮询）
+  const stockPollingEnabled = !boardLoading && isStockDimension;
   const { refresh: refreshStockData } = usePolling(fetchStockData, {
     interval: getRefreshInterval('heatmap'),
-    enabled: !boardLoading && isStockDimension,
+    enabled: stockPollingEnabled,
   });
 
-  const stockQueryInitRef = useRef(false);
+  const stockQueryKey = `${config.dimension}:${config.topK}`;
+  const lastStockQueryRef = useRef({ key: stockQueryKey, enabled: stockPollingEnabled });
   useEffect(() => {
-    if (!stockQueryInitRef.current) {
-      stockQueryInitRef.current = true;
-      return;
-    }
-    if (isStockDimension) {
+    const last = lastStockQueryRef.current;
+    lastStockQueryRef.current = { key: stockQueryKey, enabled: stockPollingEnabled };
+    if (last.enabled && stockPollingEnabled && last.key !== stockQueryKey) {
       refreshStockData();
     }
-  }, [config.dimension, config.topK, isStockDimension, refreshStockData]);
+  }, [stockQueryKey, stockPollingEnabled, refreshStockData]);
 
   // 兼容旧逻辑的 loading 状态
   const loading = boardLoading;
