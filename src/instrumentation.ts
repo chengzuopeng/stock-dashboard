@@ -17,8 +17,10 @@ function dedupeExceptions(item: TransportItem): TransportItem | null {
   const payload = item.payload as { type?: string; value?: string };
   const key = `${payload.type ?? ''}:${payload.value ?? ''}`;
   const now = Date.now();
-  const last = lastExceptionAt.get(key);
-  if (last !== undefined && now - last < EXCEPTION_DEDUPE_WINDOW_MS) return null;
+  for (const [entryKey, at] of lastExceptionAt) {
+    if (now - at >= EXCEPTION_DEDUPE_WINDOW_MS) lastExceptionAt.delete(entryKey);
+  }
+  if (lastExceptionAt.has(key)) return null;
   lastExceptionAt.set(key, now);
   return item;
 }
