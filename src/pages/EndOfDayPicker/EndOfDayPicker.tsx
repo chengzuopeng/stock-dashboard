@@ -670,12 +670,14 @@ export function EndOfDayPicker() {
     }
   }, [selectedStocks.size, sortedStocks]);
 
+  const isInWatchlist = useIsInWatchlist();
+
   // 批量加入自选
   const handleBatchAddWatchlist = useCallback(() => {
     const routeCodes = stocks
-      .filter((stock) => selectedStocks.has(stock.code))
+      .filter((stock) => selectedStocks.has(stock.code) && !isInWatchlist(stock.routeCode))
       .map((stock) => stock.routeCode);
-    const addedCount = watchlistActions.batchAdd(routeCodes);
+    const addedCount = routeCodes.length > 0 ? watchlistActions.batchAdd(routeCodes) : 0;
     if (addedCount > 0) {
       toast.success(`已将 ${addedCount} 只股票加入自选`);
     } else {
@@ -683,7 +685,7 @@ export function EndOfDayPicker() {
     }
     setSelectedStocks(new Set());
     setShowSelectMode(false);
-  }, [selectedStocks, stocks, toast]);
+  }, [isInWatchlist, selectedStocks, stocks, toast]);
 
   return (
     <div className={styles.container}>
