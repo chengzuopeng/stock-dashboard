@@ -60,17 +60,12 @@ const KLINE_PERIODS = [
   { key: 'monthly', label: '月K' },
 ];
 
-const KLINE_WINDOW_YEARS: Record<KlinePeriod, number | null> = {
-  daily: 3,
-  weekly: 10,
-  monthly: null,
-};
+const DAILY_KLINE_WINDOW_YEARS = 3;
 
 function getKlineStartDate(period: KlinePeriod): string | undefined {
-  const years = KLINE_WINDOW_YEARS[period];
-  if (years === null) return undefined;
+  if (period !== 'daily') return undefined;
   const date = new Date();
-  date.setFullYear(date.getFullYear() - years);
+  date.setFullYear(date.getFullYear() - DAILY_KLINE_WINDOW_YEARS);
   return toYmd(date);
 }
 
