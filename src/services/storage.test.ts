@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addToWatchlist,
   getAlertRules,
-  getAllWatchlistCodes,
   getSettings,
   getWatchlistGroups,
   markAlertRulesTriggered,
@@ -65,7 +64,7 @@ describe('addToWatchlist', () => {
   it('adds a normalized code only once', () => {
     addToWatchlist('600519');
     addToWatchlist('sh600519');
-    expect(getAllWatchlistCodes()).toEqual(['sh600519']);
+    expect(getWatchlistGroups()[0].codes).toEqual(['sh600519']);
   });
 });
 

@@ -210,26 +210,6 @@ export function removeFromWatchlist(code: string, groupId?: string): void {
 }
 
 /**
- * 检查是否在自选中
- */
-export function isInWatchlist(code: string): boolean {
-  const normalizedCode = normalizeStockCode(code);
-  if (!normalizedCode) return false;
-  const groups = getWatchlistGroups();
-  return groups.some((g) => g.codes.includes(normalizedCode));
-}
-
-/**
- * 获取所有自选代码
- */
-export function getAllWatchlistCodes(): string[] {
-  const groups = getWatchlistGroups();
-  const codes = new Set<string>();
-  groups.forEach((g) => g.codes.forEach((c) => codes.add(c)));
-  return Array.from(codes);
-}
-
-/**
  * 创建分组
  */
 export function createWatchlistGroup(name: string): WatchlistGroup {
@@ -377,13 +357,6 @@ export function markAlertRulesTriggered(ruleIds: string[], triggeredAt: number):
     if (ids.has(rule.id)) rule.lastTriggeredAt = triggeredAt;
   });
   saveAlertRules(rules);
-}
-
-/**
- * 获取某股票的告警规则
- */
-export function getAlertsByCode(code: string): AlertRule[] {
-  return getAlertRules().filter((r) => r.code === code);
 }
 
 // ========== 应用设置 ==========
