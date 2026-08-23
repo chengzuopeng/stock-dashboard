@@ -10,10 +10,10 @@ import {
   deleteWatchlistGroup,
   getAlertRules,
   getWatchlistGroups,
+  markAlertRulesTriggered,
   moveWatchlistCode,
   removeFromWatchlist,
   renameWatchlistGroup,
-  updateAlertRule,
 } from './storage';
 
 export interface WatchlistState {
@@ -82,6 +82,6 @@ export const watchlistActions = {
   renameGroup: (groupId: string, name: string) => mutate(() => renameWatchlistGroup(groupId, name)),
   addAlert: (rule: Omit<AlertRule, 'id' | 'createdAt'>) => mutate(() => addAlertRule(rule)),
   deleteAlert: (ruleId: string) => mutate(() => deleteAlertRule(ruleId)),
-  updateAlert: (ruleId: string, updates: Partial<AlertRule>) =>
-    mutate(() => updateAlertRule(ruleId, updates)),
+  markAlertsTriggered: (ruleIds: string[], triggeredAt: number) =>
+    mutate(() => markAlertRulesTriggered(ruleIds, triggeredAt)),
 };

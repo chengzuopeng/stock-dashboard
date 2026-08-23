@@ -370,13 +370,13 @@ export function deleteAlertRule(ruleId: string): void {
 /**
  * 更新告警规则
  */
-export function updateAlertRule(ruleId: string, updates: Partial<AlertRule>): void {
+export function markAlertRulesTriggered(ruleIds: string[], triggeredAt: number): void {
+  const ids = new Set(ruleIds);
   const rules = getAlertRules();
-  const rule = rules.find((r) => r.id === ruleId);
-  if (rule) {
-    Object.assign(rule, updates);
-    saveAlertRules(rules);
-  }
+  rules.forEach((rule) => {
+    if (ids.has(rule.id)) rule.lastTriggeredAt = triggeredAt;
+  });
+  saveAlertRules(rules);
 }
 
 /**

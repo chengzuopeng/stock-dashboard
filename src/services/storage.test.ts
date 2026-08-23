@@ -5,6 +5,7 @@ import {
   getAllWatchlistCodes,
   getSettings,
   getWatchlistGroups,
+  markAlertRulesTriggered,
 } from './storage';
 
 function createMemoryStorage(): Storage {
@@ -72,6 +73,29 @@ describe('getAlertRules', () => {
   it('returns an empty list for non-array data', () => {
     localStorage.setItem('watchlist.alerts', '{"id":1}');
     expect(getAlertRules()).toEqual([]);
+  });
+});
+
+describe('markAlertRulesTriggered', () => {
+  it('stamps only the given rules in a single write', () => {
+    localStorage.setItem(
+      'watchlist.alerts',
+      JSON.stringify([
+        { id: 'a', lastTriggeredAt: 0 },
+        { id: 'b', lastTriggeredAt: 0 },
+        { id: 'c', lastTriggeredAt: 0 },
+      ])
+    );
+    const setItem = vi.spyOn(localStorage, 'setItem');
+
+    markAlertRulesTriggered(['a', 'c'], 123);
+
+    expect(setItem).toHaveBeenCalledTimes(1);
+    expect(getAlertRules().map((rule) => [rule.id, rule.lastTriggeredAt])).toEqual([
+      ['a', 123],
+      ['b', 0],
+      ['c', 123],
+    ]);
   });
 });
 

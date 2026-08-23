@@ -234,9 +234,15 @@ export function Watchlist() {
             return;
           }
 
-          watchlistActions.updateAlert(rule.id, { lastTriggeredAt: now });
           triggered.push(rule);
         });
+
+      if (triggered.length > 0) {
+        watchlistActions.markAlertsTriggered(
+          triggered.map((rule) => rule.id),
+          now
+        );
+      }
 
       // 超限聚合成一条：全部规则都已写 lastTriggeredAt（冷却语义一致），不逐条轰炸
       const MAX_ALERT_TOASTS = 2;
