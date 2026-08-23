@@ -179,16 +179,16 @@ export function Heatmap() {
     enabled: !boardLoading && isStockDimension,
   });
 
-  const topKInitRef = useRef(false);
+  const stockQueryInitRef = useRef(false);
   useEffect(() => {
-    if (!topKInitRef.current) {
-      topKInitRef.current = true;
+    if (!stockQueryInitRef.current) {
+      stockQueryInitRef.current = true;
       return;
     }
     if (isStockDimension) {
       refreshStockData();
     }
-  }, [config.topK, isStockDimension, refreshStockData]);
+  }, [config.dimension, config.topK, isStockDimension, refreshStockData]);
 
   // 兼容旧逻辑的 loading 状态
   const loading = boardLoading;
